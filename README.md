@@ -40,22 +40,19 @@ tap it again to stop.
 
 ## Install
 
-```
-curl -fsSL https://example.com/freeflow/install.sh | bash
-```
-
-**Read the script before you pipe it to bash.** It's plain, commented shell — inspect it at
-[`install.sh`](install.sh) first. It will ask for `sudo` confirmation before installing anything
-and print what it's doing at each step.
-
-Manual install, if you'd rather not curl-pipe:
+The installer installs freeflow FROM this checkout (it needs `pyproject.toml` and
+`systemd/freeflow.service` alongside it), so it can't be curl-piped straight into bash — clone
+first, then run it as a local file:
 
 ```
 git clone <this-repo>
 cd freeflow
-less install.sh   # read it
+less install.sh   # read it — it's plain, commented shell
 ./install.sh
 ```
+
+It will ask for `sudo` confirmation before installing anything and print what it's doing at each
+step.
 
 Supports Fedora (dnf), Ubuntu/Debian (apt), and Arch (pacman). Wayland only for now.
 

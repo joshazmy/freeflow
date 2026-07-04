@@ -7,6 +7,14 @@ FREEFLOW_HOME="${HOME}/.local/share/freeflow"
 FREEFLOW_CONFIG="${HOME}/.config/freeflow"
 WHISPER_DIR="${FREEFLOW_HOME}/whisper.cpp"
 MODELS_DIR="${FREEFLOW_HOME}/models"
+# Must run as a checked-out file, not piped (curl | bash): the installer installs freeflow
+# FROM this repo checkout (pyproject.toml, systemd/freeflow.service) — a bare piped script has
+# no such tree to install from. ${BASH_SOURCE[0]:-} is unset/empty when read from a stream.
+if [ -z "${BASH_SOURCE[0]:-}" ] || [ ! -f "${BASH_SOURCE[0]}" ]; then
+  echo "install.sh must be run from a real checkout, not piped (e.g. curl | bash)." >&2
+  echo "Run instead:  git clone <this-repo> && cd freeflow && ./install.sh" >&2
+  exit 1
+fi
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REBOOT_NEEDED=0
 
@@ -31,16 +39,6 @@ else
 fi
 info "Detected package manager: ${PKG_MANAGER}"
 
-# ---------------------------------------------------------------------------
-# 0b. Require Python 3.11+
-# ---------------------------------------------------------------------------
-if ! command -v python3 >/dev/null 2>&1 || \
-   [ "$(python3 -c 'import sys; print(sys.version_info >= (3, 11))' 2>/dev/null)" != "True" ]; then
-  echo "Freeflow requires Python 3.11 or newer. Install/upgrade python3 and re-run." >&2
-  exit 1
-fi
-ok "python3 >= 3.11"
-
 pkg_install() {
   # $@ = list of package names FOR THE DETECTED MANAGER (caller maps names per-manager)
   case "${PKG_MANAGER}" in
@@ -61,27 +59,36 @@ pkg_have() {
 info "Step 1/9: system dependencies"
 
 # name -> (dnf apt pacman) package names, and a command to check it's present
+# python3-devel: needed to build the evdev native extension (pip/uv has no prebuilt wheel for
+# it). Fedora/Debian split headers from the interpreter; Arch's "python" package ships them
+# together, so pacman just reinstalls "python" here (harmless, deduped by sort -u below).
 declare -A DEPS_DNF=(
   [git]=git [cmake]=cmake [gcc-c++]=gcc-c++ [pw-record]=pipewire-utils
   [wl-copy]=wl-clipboard [ydotool]=ydotool [playerctl]=playerctl
-  [python3]=python3 [curl]=curl
+  [python3]=python3 [python3-devel]=python3-devel [curl]=curl
 )
 declare -A DEPS_APT=(
   [git]=git [cmake]=cmake [gcc-c++]=build-essential [pw-record]=pipewire-utils
   [wl-copy]=wl-clipboard [ydotool]=ydotool [playerctl]=playerctl
-  [python3]=python3 [curl]=curl
+  [python3]=python3 [python3-devel]=python3-dev [curl]=curl
 )
 declare -A DEPS_PACMAN=(
   [git]=git [cmake]=cmake [gcc-c++]=base-devel [pw-record]=pipewire
   [wl-copy]=wl-clipboard [ydotool]=ydotool [playerctl]=playerctl
-  [python3]=python3 [curl]=curl
+  [python3]=python3 [python3-devel]=python [curl]=curl
 )
 
 declare -A DEPS_CHECK=(
   [git]=git [cmake]=cmake [gcc-c++]=g++ [pw-record]=pw-record
   [wl-copy]=wl-copy [ydotool]=ydotool [playerctl]=playerctl
-  [python3]=python3 [curl]=curl
+  [python3]=python3 [python3-devel]="" [curl]=curl
 )
+
+# Python.h presence check (not a command, so it doesn't fit pkg_have's command -v model).
+have_python_headers() {
+  py_inc="$(python3 -c 'import sysconfig; print(sysconfig.get_path("include"))' 2>/dev/null || true)"
+  [ -n "${py_inc}" ] && [ -f "${py_inc}/Python.h" ]
+}
 
 case "${PKG_MANAGER}" in
   dnf)    declare -n DEPS_MAP=DEPS_DNF ;;
@@ -92,13 +99,23 @@ esac
 missing_pkgs=()
 for name in "${!DEPS_CHECK[@]}"; do
   check_bin="${DEPS_CHECK[$name]}"
-  if pkg_have "${check_bin}"; then
+  if [ "${name}" = "python3-devel" ]; then
+    if have_python_headers; then
+      skip "${name}"
+    else
+      missing_pkgs+=("${DEPS_MAP[$name]}")
+    fi
+  elif pkg_have "${check_bin}"; then
     skip "${name}"
   else
     missing_pkgs+=("${DEPS_MAP[$name]}")
   fi
 done
-mapfile -t missing_pkgs < <(printf '%s\n' "${missing_pkgs[@]}" | sort -u)
+# dedup, guarded: `printf '%s\n'` with zero args still emits one blank line, which would
+# turn an empty missing_pkgs into a bogus single-element [""] array otherwise.
+if [ "${#missing_pkgs[@]}" -gt 0 ]; then
+  mapfile -t missing_pkgs < <(printf '%s\n' "${missing_pkgs[@]}" | sort -u)
+fi
 
 # Optional: pill overlay deps (gtk4-layer-shell + python3-gobject). Best-effort only --
 # folded into the SAME confirmed prompt as the required packages below, no second
@@ -132,6 +149,23 @@ if [ "${#missing_pkgs[@]}" -gt 0 ] || [ "${#optional_pkgs[@]}" -gt 0 ]; then
   else
     warn "skipped optional pill overlay dependencies — will fall back to notify-send overlay"
   fi
+fi
+
+# ---------------------------------------------------------------------------
+# 1b. Require Python 3.11+ (checked AFTER step 1 installs python3 on a fresh box)
+# ---------------------------------------------------------------------------
+if ! command -v python3 >/dev/null 2>&1 || \
+   [ "$(python3 -c 'import sys; print(sys.version_info >= (3, 11))' 2>/dev/null)" != "True" ]; then
+  echo "Freeflow requires Python 3.11 or newer. Install/upgrade python3 and re-run." >&2
+  exit 1
+fi
+ok "python3 >= 3.11"
+
+# systemd as PID 1 (not just the systemctl binary) — containers/chroots/WSL often have the
+# binary but no running instance, and `systemctl` there just errors out.
+HAS_SYSTEMD=0
+if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
+  HAS_SYSTEMD=1
 fi
 
 # ---------------------------------------------------------------------------
@@ -253,9 +287,13 @@ Restart=on-failure
 [Install]
 WantedBy=multi-user.target
 EOF
-    sudo systemctl daemon-reload
-    sudo systemctl enable --now ydotoold.service
-    ok "installed + started ydotoold system service"
+    if [ "${HAS_SYSTEMD}" -eq 1 ]; then
+      sudo systemctl daemon-reload
+      sudo systemctl enable --now ydotoold.service
+      ok "installed + started ydotoold system service"
+    else
+      warn "skipped: no running systemd — unit file written to /etc/systemd/system/ydotoold.service, enable it manually with 'sudo systemctl enable --now ydotoold.service' once systemd is available"
+    fi
   fi
 fi
 
@@ -291,15 +329,28 @@ FREEFLOW_BIN="${HOME}/.local/bin/freeflow"
 if [ -x "${FREEFLOW_BIN}" ]; then
   "${FREEFLOW_BIN}" config --init
   ok "wrote default config (or confirmed it exists)"
+  # config --init leaves whisper_bin/model_path blank; point them at what we just built/
+  # downloaded so freeflow works out of the box instead of needing manual editing.
+  CONFIG_FILE="${FREEFLOW_CONFIG}/config.toml"
+  if [ -f "${CONFIG_FILE}" ]; then
+    sed -i "s|^whisper_bin = \"\"|whisper_bin = \"${WHISPER_CLI}\"|" "${CONFIG_FILE}"
+    sed -i "s|^model_path = \"\"|model_path = \"${MODEL_PATH}\"|" "${CONFIG_FILE}"
+    ok "wired whisper_bin/model_path into config.toml"
+  fi
 else
   warn "freeflow binary not found at ${FREEFLOW_BIN} yet — skipping config --init, run it manually after re-login"
 fi
 
 mkdir -p "${HOME}/.config/systemd/user"
 cp "${REPO_DIR}/systemd/freeflow.service" "${HOME}/.config/systemd/user/freeflow.service"
-systemctl --user daemon-reload
-systemctl --user enable freeflow.service
-ok "installed + enabled freeflow.service (user unit)"
+# headless/no-systemd (container, chroot, no user D-Bus session): copy the unit file for later,
+# don't hard-fail the rest of the install trying to reach a session bus that isn't there.
+if [ "${HAS_SYSTEMD}" -eq 1 ] && systemctl --user daemon-reload 2>/dev/null; then
+  systemctl --user enable freeflow.service
+  ok "installed + enabled freeflow.service (user unit)"
+else
+  warn "skipped: no user systemd session available — unit copied to ~/.config/systemd/user/freeflow.service, run 'systemctl --user enable --now freeflow.service' after logging into a real desktop session"
+fi
 
 # ---------------------------------------------------------------------------
 # 9. Summary
