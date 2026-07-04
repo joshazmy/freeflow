@@ -17,6 +17,7 @@ if [ -z "${BASH_SOURCE[0]:-}" ] || [ ! -f "${BASH_SOURCE[0]}" ]; then
 fi
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REBOOT_NEEDED=0
+USER="${USER:-$(id -un)}"   # podman exec / minimal shells do not set USER; set -u would abort
 
 ok()   { echo "  ✅ $*"; }
 skip() { echo "  ⏭  $* (already done)"; }
