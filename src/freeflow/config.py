@@ -28,6 +28,7 @@ class Config:
     tone_overrides: dict = field(default_factory=dict)  # app_class(lower) -> formal|casual|neutral
     media_pause: bool = True
     history: bool = True     # record dictations to a local history file
+    dark: bool = False       # warm dark theme; applied live via gui.style.apply_style
 
 
 def _parse_env_value(raw: str, typ):
@@ -112,6 +113,9 @@ media_pause = true
 
 # Record dictations to a local history file (~/.local/share/freeflow/history.jsonl).
 history = true
+
+# Warm dark theme (applies live from the GUI's General pane).
+# dark = false
 
 # Per-app tone overrides, e.g. tone_overrides.slack = "casual"
 [tone_overrides]

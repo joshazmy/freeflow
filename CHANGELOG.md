@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.3.0 — 2026-07-04
+
+- **Dark mode** — warm dark theme with a switch in General; applies instantly, no restart.
+- **Themed switches** — all toggle switches now match the Freeflow look (no more stock blue).
+- **New wordmark font** — the "Freeflow" sidebar title is now an italic serif.
+- **Downloadable models** — picking a speech model you don't have shows a Download button with
+  a progress bar (from whisper.cpp's official model repo). Same for the cleanup model: if it
+  isn't in your local Ollama, a Pull button fetches it.
+- **Cleanup explained** — the Models pane now says in plain English what AI cleanup does and
+  that dictation never blocks on it.
+- **Tones explained** — Tone & Apps shows what Formal/Neutral/Casual mean with a real
+  before/after example for each.
+- **Friendlier onboarding** — a new first step explains how local speech-to-text works
+  (no cloud, no account, nothing leaves your computer).
+- **Easy install/uninstall** — install.sh now shows its full plan and asks before touching
+  anything; new uninstall.sh removes everything it installed (with --dry-run, and it asks
+  before deleting your models, config, or history).
+
 ## 0.2.0 — 2026-07-04
 
 - **Dictation history**: every dictation is now kept locally (last 200, `~/.local/share/freeflow/history.jsonl`).

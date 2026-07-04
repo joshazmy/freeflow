@@ -192,3 +192,25 @@ def test_start_login_switch_reverts_on_failure(tmp_path, monkeypatch):
     sw = _find(root, "switch-start-login")
     sw.set_active(True)
     assert sw.get_active() is False
+
+
+def test_dark_switch_reflects_cfg(tmp_path, monkeypatch):
+    monkeypatch.setattr(general, "is_login_enabled", lambda: False)
+    ctx = _ctx(tmp_path)
+    ctx.cfg.dark = True
+    root = general.build(ctx)
+    assert _find(root, "switch-dark").get_active() is True
+
+
+def test_dark_switch_toggle_persists_without_restart_and_applies_style(tmp_path, monkeypatch):
+    monkeypatch.setattr(general, "is_login_enabled", lambda: False)
+    import freeflow.gui.style as style
+    calls = []
+    monkeypatch.setattr(style, "apply_style", lambda dark=False: calls.append(dark))
+    ctx = _ctx(tmp_path)
+    root = general.build(ctx)
+    sw = _find(root, "switch-dark")
+    sw.set_active(True)
+    assert load(ctx.config_path).dark is True
+    assert ctx.restart_needed is False
+    assert calls == [True]

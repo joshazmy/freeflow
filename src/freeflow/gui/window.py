@@ -26,6 +26,7 @@ class SettingsWindow(Gtk.ApplicationWindow):
 
         wordmark = Gtk.Label(label="Freeflow")
         wordmark.add_css_class("ff-serif")
+        wordmark.add_css_class("ff-wordmark")
         wordmark.add_css_class("title-2")
         wordmark.set_margin_top(16)
         wordmark.set_margin_bottom(8)

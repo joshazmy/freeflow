@@ -202,7 +202,7 @@ def test_restart_now_exception_keeps_banner_with_message(tmp_path, monkeypatch):
 def test_app_main_creates_and_activates(tmp_path, monkeypatch):
     from freeflow.gui import app as app_mod
 
-    monkeypatch.setattr(app_mod, "apply_style", lambda: None)
+    monkeypatch.setattr(app_mod, "apply_style", lambda dark=False: None)
     monkeypatch.setenv("FREEFLOW_CONFIG", str(tmp_path / "config.toml"))
     # main() builds a real Gtk.Application; just confirm it constructs and
     # returns an int-like exit code path without actually running the loop.

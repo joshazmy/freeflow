@@ -74,6 +74,21 @@ def test_mic_test_passed_false_for_tiny_file(monkeypatch):
     assert onboarding.mic_test_passed() is False
 
 
+# ---------- step 0 "What is Freeflow?" text (headless) ----------
+
+def test_intro_step_is_first_and_explains_locally():
+    assert onboarding.OnboardingWindow.STEP_NAMES[0] == "intro"
+    assert onboarding.OnboardingWindow.STEP_NAMES[1] == "permissions"
+    assert len(onboarding.OnboardingWindow.STEP_NAMES) == 6
+    intro = onboarding.INTRO_PARAGRAPH.lower()
+    assert "whisper.cpp" in intro
+    assert "no cloud" in intro
+    assert "nothing leaves" in intro
+    # 3-line hold -> talk -> release visual
+    labels = " ".join(label for label, _desc in onboarding.HOLD_TALK_RELEASE).lower()
+    assert "hold" in labels and "talk" in labels and "release" in labels
+
+
 # ---------- widget flow (GTK) ----------
 
 def test_onboarding_window_step_navigation(tmp_path):
@@ -87,6 +102,8 @@ def test_onboarding_window_step_navigation(tmp_path):
     ctx = _ctx(tmp_path)
     win = onboarding.OnboardingWindow(application=None, ctx=ctx)
 
+    assert win.stack.get_visible_child_name() == "intro"
+    win._on_next(None)
     assert win.stack.get_visible_child_name() == "permissions"
     win._on_next(None)
     assert win.stack.get_visible_child_name() == "mic"

@@ -1,5 +1,5 @@
-"""First-run onboarding wizard: 5 steps per design/mockup.html's #onboarding
-screen (docs/GUI.md) - permissions, mic test, shortcut, language, try it.
+"""First-run onboarding wizard: 6 steps - what is Freeflow?, permissions,
+mic test, shortcut, language, try it (docs/GUI.md + docs/GUI-round3.md).
 """
 from __future__ import annotations
 
@@ -31,6 +31,20 @@ LANGUAGES = [
     ("English", "en"),
     ("Español", "es"),
     ("Français", "fr"),
+]
+
+INTRO_PARAGRAPH = (
+    "Your voice is transcribed on this machine by whisper.cpp — a local speech model. "
+    "No cloud, no account, nothing leaves your computer. Then a small local AI (Ollama) "
+    "tidies the words up. Hold the hotkey, talk, release — the cleaned-up text is typed "
+    "right where your cursor is."
+)
+
+# 3-line hold -> talk -> release visual (emoji + label, plain description)
+HOLD_TALK_RELEASE = [
+    ("🖱️ Hold", "press and hold your hotkey"),
+    ("🎙️ Talk", "say your sentence out loud"),
+    ("✍️ Release", "let go — clean text appears at your cursor"),
 ]
 
 TRY_IT_TEXT = "um can you uh send the file"
@@ -86,7 +100,7 @@ def _permission_row(ok: bool, text: str) -> Gtk.Box:
 
 
 class OnboardingWindow(Gtk.ApplicationWindow):
-    STEP_NAMES = ["permissions", "mic", "shortcut", "language", "tryit"]
+    STEP_NAMES = ["intro", "permissions", "mic", "shortcut", "language", "tryit"]
 
     def __init__(self, application, ctx: GuiContext):
         super().__init__(application=application, title="Welcome to Freeflow")
@@ -104,12 +118,13 @@ class OnboardingWindow(Gtk.ApplicationWindow):
         self._shortcut_buttons: dict[str, Gtk.Button] = {}
         self._language_buttons: dict[str, Gtk.Button] = {}
 
+        self.stack.add_named(self._build_intro_step(), "intro")
         self.stack.add_named(self._build_permissions_step(), "permissions")
         self.stack.add_named(self._build_mic_step(), "mic")
         self.stack.add_named(self._build_shortcut_step(), "shortcut")
         self.stack.add_named(self._build_language_step(), "language")
         self.stack.add_named(self._build_tryit_step(), "tryit")
-        self.stack.set_visible_child_name("permissions")
+        self.stack.set_visible_child_name("intro")
 
         nav = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
         nav.set_halign(Gtk.Align.CENTER)
@@ -151,6 +166,33 @@ class OnboardingWindow(Gtk.ApplicationWindow):
         ONBOARDED_PATH.parent.mkdir(parents=True, exist_ok=True)
         ONBOARDED_PATH.touch()
         self.close()
+
+    # ---------- step 0: what is Freeflow? ----------
+
+    def _build_intro_step(self) -> Gtk.Widget:
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        title = Gtk.Label(label="What is Freeflow?")
+        title.add_css_class("ff-serif")
+        box.append(title)
+
+        para = Gtk.Label(label=INTRO_PARAGRAPH)
+        para.set_wrap(True)
+        para.set_xalign(0.0)
+        para.add_css_class("ff-muted")
+        box.append(para)
+
+        for pill_label, desc in HOLD_TALK_RELEASE:
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            row.add_css_class("ff-card")
+            pill = Gtk.Label(label=pill_label)
+            pill.add_css_class("ff-pill")
+            row.append(pill)
+            text = Gtk.Label(label=desc)
+            text.add_css_class("ff-muted")
+            text.set_xalign(0.0)
+            row.append(text)
+            box.append(row)
+        return box
 
     # ---------- step 1: permissions ----------
 
@@ -342,8 +384,13 @@ def main(argv=None) -> int:
 
     def on_activate(app) -> None:
         from freeflow.gui.style import apply_style
-        apply_style()
         cfg = load()
+        # apply_style gains a `dark` kwarg concurrently (agent A). getattr + the
+        # TypeError guard keep this working before/after that signature lands.
+        try:
+            apply_style(dark=getattr(cfg, "dark", False))
+        except TypeError:
+            apply_style()
         ctx = GuiContext(cfg=cfg)
         win = OnboardingWindow(application=app, ctx=ctx)
         win.present()

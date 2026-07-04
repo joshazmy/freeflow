@@ -135,3 +135,34 @@ def test_save_values_escapes_control_chars(tmp_path):
     p = tmp_path / "config.toml"
     save_values({"ollama_model": "bad\nname\tx"}, str(p))
     assert load(str(p)).ollama_model == "bad\nname\tx"       # file stays parseable
+
+
+# --- dark mode field (round 3) ---
+
+def test_dark_defaults_false(tmp_path):
+    cfg = load(str(tmp_path / "nope.toml"))
+    assert cfg.dark is False
+
+
+def test_dark_toml_override(tmp_path):
+    path = tmp_path / "config.toml"
+    path.write_text("dark = true\n")
+    cfg = load(str(path))
+    assert cfg.dark is True
+
+
+def test_dark_env_override(tmp_path, monkeypatch):
+    monkeypatch.setenv("FREEFLOW_DARK", "true")
+    cfg = load(str(tmp_path / "nope.toml"))
+    assert cfg.dark is True
+
+
+def test_default_toml_has_commented_dark_line_before_tone_overrides(tmp_path):
+    from freeflow.config import save_default
+    p = tmp_path / "config.toml"
+    save_default(str(p))
+    text = p.read_text()
+    assert "# dark = false" in text
+    assert text.index("# dark = false") < text.index("[tone_overrides]")
+    # commented out: loading the default file must not set dark=True
+    assert load(str(p)).dark is False
