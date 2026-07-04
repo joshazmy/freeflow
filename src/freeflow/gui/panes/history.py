@@ -110,12 +110,14 @@ def build(ctx) -> "Gtk.Widget":  # noqa: F821 - Gtk imported lazily below
             pill = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
             pill.add_css_class("ff-pill")
 
+            click_area = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
             text_label = Gtk.Label(label=_ellipsize(entry["cleaned"]), xalign=0)
-            pill.append(text_label)
+            click_area.append(text_label)
 
             caption = Gtk.Label(label=format_caption(entry), xalign=0)
             caption.add_css_class("ff-muted")
-            pill.append(caption)
+            click_area.append(caption)
+            pill.append(click_area)
 
             click = Gtk.GestureClick()
 
@@ -123,7 +125,8 @@ def build(ctx) -> "Gtk.Widget":  # noqa: F821 - Gtk imported lazily below
                 copy_to_clipboard(cleaned, cap)
 
             click.connect("released", on_click)
-            pill.add_controller(click)
+            # gesture on the text area only -- the raw-transcript Expander below must not copy
+            click_area.add_controller(click)
 
             expander = Gtk.Expander(label="⌄")
             raw_label = Gtk.Label(label=entry["raw"], xalign=0)

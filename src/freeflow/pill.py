@@ -161,7 +161,10 @@ class Pill(Gtk.Application):
         except (OSError, ValueError):
             self.mic_proc = None
             return
-        threading.Thread(target=self._mic_reader, args=(self.mic_proc,), daemon=True).start()
+        try:
+            threading.Thread(target=self._mic_reader, args=(self.mic_proc,), daemon=True).start()
+        except Exception:
+            self._stop_mic_capture()  # no reader -> pipe would fill and wedge pw-record
 
     def _mic_reader(self, proc) -> None:
         try:
@@ -171,8 +174,8 @@ class Pill(Gtk.Application):
                     return
                 level = rms_level(chunk)
                 GLib.idle_add(self._apply_mic_level, level)
-        except (OSError, ValueError):
-            return
+        except Exception:
+            return  # reader death = silent fallback to the placeholder animation
 
     def _apply_mic_level(self, level: float) -> bool:
         self._mic_live = True
