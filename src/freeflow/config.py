@@ -1,5 +1,6 @@
 """Freeflow config: TOML file + FREEFLOW_* env overrides, all with sane defaults."""
 import os
+import re
 import tomllib
 from dataclasses import dataclass, field, fields
 from pathlib import Path
@@ -110,6 +111,55 @@ media_pause = true
 # Per-app tone overrides, e.g. tone_overrides.slack = "casual"
 [tone_overrides]
 """
+
+
+def _toml_value(v) -> str:
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, (int, float)):
+        return str(v)
+    return '"' + str(v).replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def save_values(updates: dict, path: str | None = None) -> Path:
+    """Write changed keys back to the TOML file, editing lines in place so the
+    default file's comments survive. tone_overrides is replaced wholesale."""
+    cfg_path = Path(path).expanduser() if path else (CONFIG_DIR / "config.toml")
+    if not cfg_path.exists():
+        save_default(str(cfg_path))
+    lines = cfg_path.read_text().splitlines()
+
+    # split off the [tone_overrides] section (always regenerated at the end)
+    try:
+        cut = next(i for i, l in enumerate(lines) if l.strip() == "[tone_overrides]")
+        head, tones = lines[:cut], None
+    except StopIteration:
+        head = lines
+    existing_tones = load(str(cfg_path)).tone_overrides
+    tones = updates.get("tone_overrides", existing_tones)
+
+    flat = {k: v for k, v in updates.items() if k != "tone_overrides"}
+    for key, val in flat.items():
+        pat = re.compile(rf"^\s*{re.escape(key)}\s*=")
+        for i, line in enumerate(head):
+            if pat.match(line):
+                head[i] = f"{key} = {_toml_value(val)}"
+                break
+        else:
+            head.append(f"{key} = {_toml_value(val)}")
+
+    out = "\n".join(head).rstrip("\n") + "\n"
+    if tones:
+        out += "\n[tone_overrides]\n"
+        out += "".join(f"{_toml_value(k)} = {_toml_value(v)}\n" for k, v in tones.items())
+    elif any(l.strip() == "[tone_overrides]" for l in lines):
+        out += "\n[tone_overrides]\n"
+
+    cfg_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = cfg_path.with_suffix(".toml.tmp")
+    tmp.write_text(out)
+    os.replace(tmp, cfg_path)
+    return cfg_path
 
 
 def save_default(path: str | None = None) -> Path:

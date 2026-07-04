@@ -118,13 +118,13 @@ if [ "${#missing_pkgs[@]}" -gt 0 ]; then
   mapfile -t missing_pkgs < <(printf '%s\n' "${missing_pkgs[@]}" | sort -u)
 fi
 
-# Optional: pill overlay deps (gtk4-layer-shell + python3-gobject). Best-effort only --
-# folded into the SAME confirmed prompt as the required packages below, no second
+# Optional: pill overlay + GUI deps (gtk4-layer-shell, gtk4, python3-gobject). Best-effort
+# only -- folded into the SAME confirmed prompt as the required packages below, no second
 # unprompted sudo install.
 case "${PKG_MANAGER}" in
-  dnf)    optional_pkgs=(gtk4-layer-shell python3-gobject) ;;
-  apt)    optional_pkgs=(gir1.2-gtk-4.0 python3-gi) ;;
-  pacman) optional_pkgs=(gtk4-layer-shell python-gobject) ;;
+  dnf)    optional_pkgs=(gtk4-layer-shell gtk4 python3-gobject libappindicator-gtk3) ;;
+  apt)    optional_pkgs=(gir1.2-gtk-4.0 python3-gi gir1.2-ayatanaappindicator3-0.1) ;;
+  pacman) optional_pkgs=(gtk4-layer-shell gtk4 python-gobject libappindicator-gtk3) ;;
 esac
 
 if [ "${#missing_pkgs[@]}" -gt 0 ] || [ "${#optional_pkgs[@]}" -gt 0 ]; then
@@ -139,16 +139,16 @@ if [ "${#missing_pkgs[@]}" -gt 0 ] || [ "${#optional_pkgs[@]}" -gt 0 ]; then
     fi
     if [ "${#optional_pkgs[@]}" -gt 0 ]; then
       if pkg_install "${optional_pkgs[@]}" 2>/dev/null; then
-        ok "pill overlay dependencies installed"
+        ok "pill overlay + GUI dependencies installed"
       else
-        warn "pill overlay dependencies not available — will fall back to notify-send overlay"
+        warn "pill overlay/GUI dependencies not available — will fall back to notify-send overlay, GUI/tray may not run"
       fi
     fi
   elif [ "${#missing_pkgs[@]}" -gt 0 ]; then
     echo "Cannot continue without required dependencies." >&2
     exit 1
   else
-    warn "skipped optional pill overlay dependencies — will fall back to notify-send overlay"
+    warn "skipped optional pill overlay/GUI dependencies — will fall back to notify-send overlay, GUI/tray may not run"
   fi
 fi
 
@@ -364,6 +364,8 @@ echo "  Whisper model: ${MODEL_PATH}"
 echo "  Hotkey:        hold Left Ctrl + Left Alt + Left Shift, speak, release"
 echo "  Verify:        freeflow status"
 echo "  Start now:     systemctl --user start freeflow"
+echo "  First time?    freeflow onboarding"
+echo "  Settings GUI:  freeflow gui"
 echo
 if [ "${REBOOT_NEEDED}" -eq 1 ]; then
   echo -e "\033[0;31m⚠️  You were added to the 'input' group — log out and back in before using Freeflow.\033[0m"

@@ -126,6 +126,21 @@ def cmd_version(args):
     return 0
 
 
+def cmd_gui(args):
+    from freeflow.gui.app import main
+    return main()
+
+
+def cmd_onboarding(args):
+    from freeflow.gui.onboarding import main
+    return main()
+
+
+def cmd_tray(args):
+    from freeflow.gui.tray import main
+    return main()
+
+
 def build_parser():
     p = argparse.ArgumentParser(prog="freeflow")
     sub = p.add_subparsers(dest="command", required=True)
@@ -148,6 +163,10 @@ def build_parser():
     p_test.set_defaults(func=cmd_test)
 
     sub.add_parser("version").set_defaults(func=cmd_version)
+
+    sub.add_parser("gui").set_defaults(func=cmd_gui)
+    sub.add_parser("onboarding").set_defaults(func=cmd_onboarding)
+    sub.add_parser("tray").set_defaults(func=cmd_tray)
 
     return p
 

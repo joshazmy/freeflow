@@ -53,3 +53,45 @@ def test_save_default_writes_file_once(tmp_path):
     path.write_text("# edited by user\n")
     save_default(str(path))
     assert path.read_text() == "# edited by user\n"
+
+
+# --- save_values (GUI write-back) ---
+
+def test_save_values_updates_existing_key_and_keeps_comments(tmp_path):
+    from freeflow.config import save_default, save_values, load
+    p = tmp_path / "config.toml"
+    save_default(str(p))
+    save_values({"language": "auto", "cleanup": False, "threads": 4}, str(p))
+    cfg = load(str(p))
+    assert cfg.language == "auto"
+    assert cfg.cleanup is False
+    assert cfg.threads == 4
+    text = p.read_text()
+    assert "# Freeflow configuration" in text  # comments survive
+
+
+def test_save_values_appends_missing_key(tmp_path):
+    from freeflow.config import save_values, load
+    p = tmp_path / "config.toml"
+    p.write_text('language = "en"\n')
+    save_values({"ollama_model": "qwen3:4b"}, str(p))
+    assert load(str(p)).ollama_model == "qwen3:4b"
+
+
+def test_save_values_tone_overrides(tmp_path):
+    from freeflow.config import save_default, save_values, load
+    p = tmp_path / "config.toml"
+    save_default(str(p))
+    save_values({"tone_overrides": {"slack": "casual", "thunderbird": "formal"}}, str(p))
+    cfg = load(str(p))
+    assert cfg.tone_overrides == {"slack": "casual", "thunderbird": "formal"}
+    # replace, not merge: saving again with fewer entries drops the rest
+    save_values({"tone_overrides": {"slack": "casual"}}, str(p))
+    assert load(str(p)).tone_overrides == {"slack": "casual"}
+
+
+def test_save_values_creates_file_when_missing(tmp_path):
+    from freeflow.config import save_values, load
+    p = tmp_path / "config.toml"
+    save_values({"language": "auto"}, str(p))
+    assert load(str(p)).language == "auto"

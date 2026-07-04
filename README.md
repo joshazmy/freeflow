@@ -56,6 +56,23 @@ step.
 
 Supports Fedora (dnf), Ubuntu/Debian (apt), and Arch (pacman). Wayland only for now.
 
+## GUI
+
+Optional native GTK4 settings app (no Electron, no webview — 100% local, same as everything
+else here):
+
+```
+freeflow onboarding   # first-run setup: permissions, mic test, shortcut, language, try it
+freeflow gui          # settings window: general, dictionary, tone & apps, models, privacy, about
+freeflow tray         # system-tray icon: open settings, pause/resume dictation, quit
+```
+
+Needs GTK4 + PyGObject (`install.sh` offers to install these, or `dnf install gtk4
+python3-gobject` / your distro's equivalent) and, for the tray icon only, the AppIndicator3
+typelib (`dnf install libappindicator-gtk3`, apt: `gir1.2-ayatanaappindicator3-0.1`,
+pacman: `libappindicator-gtk3` — no pip packages). Fonts fall back to the system serif
+and sans-serif if `Sentient`/`General Sans` aren't installed — no CDN fetch either way.
+
 ## Configuration
 
 Edit `~/.config/freeflow/config.toml` (created on first run by `freeflow config --init`):
