@@ -1,0 +1,13 @@
+[Unit]
+Description=Freeflow — local dictation daemon
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/freeflow run
+Restart=on-failure
+RestartSec=2
+Environment=YDOTOOL_SOCKET=/run/ydotoold.socket
+
+[Install]
+WantedBy=graphical-session.target

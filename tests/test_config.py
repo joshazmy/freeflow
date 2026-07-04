@@ -1,0 +1,55 @@
+import os
+
+from freeflow.config import Config, load, save_default
+
+
+def test_load_missing_file_gives_defaults(tmp_path):
+    cfg = load(str(tmp_path / "does-not-exist.toml"))
+    assert cfg == Config()
+
+
+def test_load_missing_keys_falls_back_to_defaults(tmp_path):
+    path = tmp_path / "config.toml"
+    path.write_text('language = "fr"\n')
+    cfg = load(str(path))
+    assert cfg.language == "fr"
+    assert cfg.threads == 8  # default, key was absent
+
+
+def test_env_override_wins_over_file(tmp_path, monkeypatch):
+    path = tmp_path / "config.toml"
+    path.write_text('threads = 4\n')
+    monkeypatch.setenv("FREEFLOW_THREADS", "16")
+    cfg = load(str(path))
+    assert cfg.threads == 16
+
+
+def test_env_override_parses_bool(tmp_path, monkeypatch):
+    monkeypatch.setenv("FREEFLOW_CLEANUP", "false")
+    cfg = load(str(tmp_path / "nope.toml"))
+    assert cfg.cleanup is False
+
+
+def test_env_override_parses_float(tmp_path, monkeypatch):
+    monkeypatch.setenv("FREEFLOW_CLEANUP_TIMEOUT", "2.5")
+    cfg = load(str(tmp_path / "nope.toml"))
+    assert cfg.cleanup_timeout == 2.5
+
+
+def test_tone_overrides_not_env_overridable(tmp_path, monkeypatch):
+    monkeypatch.setenv("FREEFLOW_TONE_OVERRIDES", "slack=casual")
+    cfg = load(str(tmp_path / "nope.toml"))
+    assert cfg.tone_overrides == {}
+
+
+def test_save_default_writes_file_once(tmp_path):
+    path = tmp_path / "cfg" / "config.toml"
+    result = save_default(str(path))
+    assert result == path
+    assert path.exists()
+    contents = path.read_text()
+    assert "whisper_bin" in contents
+    # second call must not clobber an edited file
+    path.write_text("# edited by user\n")
+    save_default(str(path))
+    assert path.read_text() == "# edited by user\n"
