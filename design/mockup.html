@@ -1,0 +1,561 @@
+<meta charset="utf-8">
+<title>Freeflow — GUI Mockup</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=sentient@400,500,700&f[]=general-sans@400,500,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FFFEF0;
+    --cream2:#FDFCE9;
+    --ink:#111110;
+    --lav:#E7D4F9;
+    --green:#16241F;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--cream2);
+    color:var(--ink);
+    font-family:'General Sans',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.serif{font-family:'Sentient',serif;}
+  .pill{
+    border-radius:999px;
+    border:1.5px solid var(--ink);
+    padding:8px 18px;
+    background:var(--cream);
+    font-weight:500;
+    cursor:pointer;
+    box-shadow:2px 2px 0 var(--ink);
+    transition:transform .1s;
+  }
+  .pill:hover{transform:translate(-1px,-1px);}
+  .pill:active{transform:translate(1px,1px); box-shadow:1px 1px 0 var(--ink);}
+  .pill.accent{background:var(--lav);}
+  .pill.selected{background:var(--ink); color:var(--cream);}
+
+  header.top{
+    max-width:1100px;margin:0 auto;padding:32px 24px 12px;
+  }
+  header.top .word{font-size:28px;font-weight:700;}
+  header.top .sub{color:#555;font-size:14px;margin-top:4px;}
+
+  nav.tabs{
+    max-width:1100px;margin:0 auto 24px;padding:0 24px;
+    display:flex;gap:10px;flex-wrap:wrap;
+  }
+  nav.tabs button{font-size:14px;padding:8px 16px;}
+
+  .stage{
+    max-width:1100px;margin:0 auto 60px;padding:0 24px;
+  }
+  .window{
+    background:var(--cream);
+    border:1.5px solid var(--ink);
+    border-radius:20px;
+    box-shadow:6px 6px 0 rgba(17,17,16,.15);
+    overflow:hidden;
+    min-height:560px;
+    position:relative;
+  }
+  .window .titlebar{
+    display:flex;align-items:center;gap:8px;
+    padding:12px 18px;border-bottom:1px solid rgba(17,17,16,.15);
+    font-size:13px;color:#555;
+  }
+  .titlebar .dots{display:flex;gap:6px;}
+  .titlebar .dots span{width:10px;height:10px;border-radius:50%;background:#ddd6b8;border:1px solid rgba(17,17,16,.3);}
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  /* ---------- Flow Bar screen ---------- */
+  .flowbar-demo{
+    height:520px;position:relative;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(231,212,249,.4), transparent 40%),
+      var(--cream);
+  }
+  .flowbar-controls{
+    position:absolute;top:24px;left:24px;display:flex;gap:10px;
+  }
+  .flowbar-caption{
+    position:absolute;top:70px;left:24px;right:24px;
+    max-width:560px;font-size:14px;color:#444;line-height:1.5;
+  }
+  .pill-mock{
+    position:absolute;bottom:36px;left:50%;transform:translateX(-50%);
+    width:76px;height:28px;border-radius:999px;
+    background:rgba(17,17,16,.85);
+    display:flex;align-items:center;justify-content:center;
+    gap:3px;
+    cursor:context-menu;
+  }
+  .pill-mock .bar{
+    width:3px;background:#fff;border-radius:2px;height:6px;
+    animation:none;
+  }
+  .pill-mock.listening .bar{animation:barpulse 1s ease-in-out infinite;}
+  .pill-mock .bar:nth-child(1){animation-delay:0s;}
+  .pill-mock .bar:nth-child(2){animation-delay:.12s;}
+  .pill-mock .bar:nth-child(3){animation-delay:.24s;}
+  .pill-mock .bar:nth-child(4){animation-delay:.36s;}
+  .pill-mock .bar:nth-child(5){animation-delay:.48s;}
+  @keyframes barpulse{
+    0%,100%{height:6px;}
+    50%{height:18px;}
+  }
+  .pill-mock .dot{width:8px;height:8px;border-radius:50%;background:#fff;}
+  .pill-mock .procdot{width:5px;height:5px;border-radius:50%;background:#fff;animation:procpulse 1.2s ease-in-out infinite;}
+  .pill-mock .procdot:nth-child(2){animation-delay:.15s;}
+  .pill-mock .procdot:nth-child(3){animation-delay:.3s;}
+  @keyframes procpulse{
+    0%,100%{opacity:.3;transform:scale(.8);}
+    50%{opacity:1;transform:scale(1.2);}
+  }
+  .ctxmenu{
+    position:absolute;bottom:72px;left:50%;transform:translateX(-50%);
+    background:var(--cream);border:1.5px solid var(--ink);border-radius:12px;
+    box-shadow:3px 3px 0 var(--ink);
+    display:none;min-width:170px;overflow:hidden;
+  }
+  .ctxmenu.show{display:block;}
+  .ctxmenu div{padding:10px 14px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;}
+  .ctxmenu div:hover{background:var(--lav);}
+
+  /* ---------- Settings screen ---------- */
+  .settings-layout{display:flex;min-height:520px;}
+  .settings-sidebar{
+    width:190px;border-right:1px solid rgba(17,17,16,.15);
+    padding:18px 10px;background:var(--cream2);
+  }
+  .settings-sidebar .sitem{
+    padding:9px 14px;border-radius:999px;font-size:14px;cursor:pointer;margin-bottom:4px;
+  }
+  .settings-sidebar .sitem:hover{background:rgba(231,212,249,.5);}
+  .settings-sidebar .sitem.active{background:var(--lav);font-weight:600;}
+  .settings-content{flex:1;padding:28px 32px;overflow-y:auto;}
+  .settings-pane{display:none;}
+  .settings-pane.active{display:block;}
+  .row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 0;border-bottom:1px solid rgba(17,17,16,.08);
+  }
+  .row .label{font-weight:500;}
+  .row .desc{font-size:12px;color:#777;margin-top:2px;}
+  .switch{
+    width:42px;height:24px;border-radius:999px;border:1.5px solid var(--ink);
+    background:var(--cream);position:relative;cursor:pointer;flex-shrink:0;
+  }
+  .switch.on{background:var(--lav);}
+  .switch .knob{
+    width:16px;height:16px;border-radius:50%;background:var(--ink);
+    position:absolute;top:2px;left:3px;transition:left .15s;
+  }
+  .switch.on .knob{left:21px;}
+  select, input[type=text]{
+    font-family:'General Sans',sans-serif;
+    border:1.5px solid var(--ink);border-radius:999px;
+    padding:7px 14px;background:var(--cream);font-size:13px;
+  }
+  .badge{
+    display:inline-block;font-size:11px;padding:3px 10px;border-radius:999px;
+    background:var(--lav);border:1px solid var(--ink);margin-left:8px;
+  }
+  .card-dark{
+    background:var(--cream);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:20px;padding:22px;box-shadow:3px 3px 0 rgba(17,17,16,.12);
+  }
+  .card-dark .card-title{font-family:'Sentient',serif;font-size:18px;margin:0 0 14px;}
+  .dict-row{
+    display:flex;align-items:center;justify-content:space-between;
+    background:#fff;border:1px solid var(--ink);
+    border-radius:999px;padding:10px 16px;margin-bottom:8px;font-size:13px;
+  }
+  .dict-row .arrow{color:var(--ink);opacity:.45;margin:0 8px;}
+  .hint{font-size:12px;color:var(--ink);opacity:.55;margin-top:12px;}
+  .addrow{display:flex;gap:8px;margin-top:14px;}
+  .addrow input{flex:1;background:#fff;border-color:var(--ink);color:var(--ink);}
+  .addrow input::placeholder{color:rgba(17,17,16,.4);}
+  .status-dot{width:9px;height:9px;border-radius:50%;background:#3cb371;display:inline-block;margin-right:6px;}
+  .model-card{border:1.5px solid var(--ink);border-radius:16px;padding:18px 20px;margin-bottom:16px;}
+  .model-card h3{margin:0 0 12px;font-size:15px;font-family:'General Sans';font-weight:600;}
+  .privacy-panel{border:1.5px solid var(--ink);border-radius:20px;padding:28px;background:var(--cream);}
+  .privacy-panel ul{margin:14px 0;padding-left:20px;line-height:2;}
+  .code-chip{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--lav);border:1.5px solid var(--ink);border-radius:999px;
+    padding:8px 16px;font-family:monospace;font-size:13px;margin-top:12px;
+  }
+  .about-block{max-width:420px;}
+  .about-block .row{border:none;padding:8px 0;}
+
+  /* ---------- Onboarding ---------- */
+  .stepper{display:flex;justify-content:center;gap:8px;padding:24px 0 0;}
+  .step-dot{
+    width:28px;height:28px;border-radius:50%;border:1.5px solid var(--ink);
+    display:flex;align-items:center;justify-content:center;font-size:12px;
+    background:var(--cream);
+  }
+  .step-dot.active{background:var(--lav);font-weight:600;}
+  .step-dot.done{background:var(--ink);color:var(--cream);}
+  .ob-body{padding:30px 60px;text-align:center;min-height:340px;}
+  .ob-pane{display:none;}
+  .ob-pane.active{display:block;}
+  .ob-pane h2{margin-bottom:8px;}
+  .ob-pane p.d{color:#555;font-size:14px;max-width:440px;margin:0 auto 24px;}
+  .level-bars{display:flex;gap:4px;justify-content:center;align-items:flex-end;height:60px;margin:20px 0;}
+  .level-bars .lb{width:6px;background:var(--lav);border:1px solid var(--ink);border-radius:2px;
+    animation:barpulse2 1.1s ease-in-out infinite;}
+  @keyframes barpulse2{0%,100%{height:8px;}50%{height:50px;}}
+  .try-box{
+    border:1.5px solid var(--ink);border-radius:16px;padding:20px;max-width:480px;margin:0 auto;
+    text-align:left;background:var(--cream2);
+  }
+  .try-box .raw{color:#888;font-size:13px;font-style:italic;}
+  .try-box .clean{font-size:16px;font-weight:500;margin-top:10px;min-height:22px;}
+  .ob-nav{display:flex;justify-content:center;gap:12px;padding:16px 0 28px;}
+
+  /* ---------- Tray ---------- */
+  .tray-stage{height:520px;position:relative;background:var(--cream2);}
+  .tray-popup{
+    position:absolute;top:24px;right:24px;width:260px;
+    background:var(--cream);border:1.5px solid var(--ink);border-radius:16px;
+    box-shadow:4px 4px 0 var(--ink);overflow:hidden;
+  }
+  .tray-status{padding:14px 18px;font-size:13px;border-bottom:1px solid rgba(17,17,16,.1);}
+  .tray-item{padding:12px 18px;font-size:14px;cursor:pointer;}
+  .tray-item:hover{background:var(--lav);}
+  .tray-stat{padding:12px 18px;font-size:12px;color:#777;border-top:1px solid rgba(17,17,16,.1);}
+  .tray-item.quit{border-top:1px solid rgba(17,17,16,.1);color:#a33;}
+
+  /* ---------- v2 preview ---------- */
+  .v2-wrap{opacity:.55;filter:grayscale(30%);padding:24px 32px;position:relative;}
+  .v2-badge{
+    position:absolute;top:18px;right:24px;
+    background:var(--ink);color:var(--cream);font-size:11px;
+    padding:4px 12px;border-radius:999px;opacity:1;filter:none;
+  }
+  .transcript-line{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid rgba(17,17,16,.08);font-size:13px;}
+  .transcript-line .t{color:#888;width:60px;flex-shrink:0;}
+  .cmd-row{display:flex;gap:8px;margin-bottom:16px;}
+</style>
+
+<header class="top">
+  <div class="word serif">Freeflow</div>
+  <div class="sub">Wispr Flow, but open source and 100% local — GUI mockup for review, nothing here is final.</div>
+</header>
+
+<nav class="tabs">
+  <button class="pill selected" data-tab="flowbar">Flow Bar</button>
+  <button class="pill" data-tab="settings">Settings</button>
+  <button class="pill" data-tab="onboarding">Onboarding</button>
+  <button class="pill" data-tab="tray">Tray Menu</button>
+  <button class="pill" data-tab="v2">v2 Preview</button>
+</nav>
+
+<main class="stage">
+  <div class="window">
+
+    <!-- 1. FLOW BAR -->
+    <section class="screen active" id="flowbar">
+      <div class="titlebar"><div class="dots"><span></span><span></span><span></span></div>Freeflow — live demo</div>
+      <div class="flowbar-demo">
+        <div class="flowbar-controls">
+          <button class="pill" data-state="idle">Idle</button>
+          <button class="pill" data-state="listening">Listening</button>
+          <button class="pill" data-state="processing">Processing</button>
+        </div>
+        <p class="flowbar-caption">
+          Hover the pill to see its shortcut. Left-click toggles hands-free mode.
+          Right-click for quick settings (language, microphone, hide pill).
+        </p>
+        <div class="pill-mock" id="pillMock" title="⌃ Ctrl + ⌥ Alt + ⇧ Shift (hold)">
+          <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+        </div>
+        <div class="ctxmenu" id="ctxMenu">
+          <div>Language <span>▸</span></div>
+          <div>Microphone <span>▸</span></div>
+          <div>Hide pill</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. SETTINGS -->
+    <section class="screen" id="settings">
+      <div class="titlebar"><div class="dots"><span></span><span></span><span></span></div>Freeflow Settings</div>
+      <div class="settings-layout">
+        <div class="settings-sidebar">
+          <div class="sitem active" data-pane="general">General</div>
+          <div class="sitem" data-pane="dictionary">Dictionary</div>
+          <div class="sitem" data-pane="tone">Tone &amp; Apps</div>
+          <div class="sitem" data-pane="models">Models</div>
+          <div class="sitem" data-pane="privacy">Data &amp; Privacy</div>
+          <div class="sitem" data-pane="about">About</div>
+        </div>
+        <div class="settings-content">
+
+          <div class="settings-pane active" id="pane-general">
+            <div class="row">
+              <div><div class="label">Hotkey</div><div class="desc">Hold to dictate</div></div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <code>⌃ Ctrl + ⌥ Alt + ⇧ Shift (hold)</code>
+                <button class="pill" style="padding:5px 12px;font-size:12px;">change</button>
+              </div>
+            </div>
+            <div class="row">
+              <div><div class="label">Hands-free</div><div class="desc">Double-tap hotkey to toggle instead of holding</div></div>
+              <div class="switch" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+            </div>
+            <div class="row">
+              <div><div class="label">Paste result</div><div class="desc">Off = type character-by-character instead</div></div>
+              <div class="switch on" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+            </div>
+            <div class="row">
+              <div><div class="label">Language</div><div class="desc">Auto-detect or pick from 100+ languages</div></div>
+              <select><option>English (auto)</option><option>Español</option><option>Français</option><option>Deutsch</option><option>… 100 more</option></select>
+            </div>
+            <div class="row">
+              <div><div class="label">Start at login</div></div>
+              <div class="switch" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+            </div>
+          </div>
+
+          <div class="settings-pane" id="pane-dictionary">
+            <div class="card-dark">
+              <div class="card-title">Your Dictionary</div>
+              <div class="dict-row"><span>Hyprland</span></div>
+              <div class="dict-row"><span>9Router</span></div>
+              <div class="dict-row"><span>Ollama</span></div>
+              <div class="dict-row"><span>hyperland <span class="arrow">→</span> Hyprland</span></div>
+              <div class="addrow">
+                <input type="text" placeholder="Add a word or correction…">
+                <button class="pill accent" style="padding:8px 16px;font-size:13px;">Add</button>
+              </div>
+              <div class="hint">Corrections you make get suggested here automatically.</div>
+            </div>
+          </div>
+
+          <div class="settings-pane" id="pane-tone">
+            <div class="row"><div class="label">Email</div><select><option>Formal</option><option>Neutral</option><option>Casual</option></select></div>
+            <div class="row"><div class="label">Work chat</div><select><option>Formal</option><option>Neutral</option><option>Casual</option></select></div>
+            <div class="row"><div class="label">Personal chat</div><select><option selected>Casual</option><option>Formal</option><option>Neutral</option></select></div>
+            <div class="row"><div class="label">Everything else</div><select><option selected>Neutral</option><option>Formal</option><option>Casual</option></select></div>
+            <h3 style="margin-top:22px;font-size:14px;">Per-app overrides</h3>
+            <div class="row"><div class="label">thunderbird</div><select><option selected>Formal</option><option>Neutral</option><option>Casual</option></select></div>
+            <div class="row"><div class="label">discord</div><select><option selected>Casual</option><option>Formal</option><option>Neutral</option></select></div>
+            <div class="addrow" style="max-width:340px;">
+              <input type="text" placeholder="app name…">
+              <button class="pill" style="padding:8px 16px;font-size:13px;">+ Add app</button>
+            </div>
+          </div>
+
+          <div class="settings-pane" id="pane-models">
+            <div class="model-card">
+              <h3>Speech-to-text</h3>
+              <div class="row" style="border:none;padding:0 0 6px;">
+                <div>Model: <select><option>large-v3-turbo (GPU)</option><option>small</option><option>base</option><option>large-v3</option></select></div>
+                <span class="badge">auto-picked for your GPU</span>
+              </div>
+            </div>
+            <div class="model-card">
+              <h3>Cleanup</h3>
+              <div class="row">
+                <div><span class="status-dot"></span>Ollama: qwen3:1.7b — <span style="color:#2e7d4f;">connected</span></div>
+                <div class="switch on" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+              </div>
+              <div class="desc">"AI cleanup" toggle above — off = raw dictation still works.</div>
+            </div>
+          </div>
+
+          <div class="settings-pane" id="pane-privacy">
+            <div class="privacy-panel">
+              <h2 class="serif" style="margin:0;">100% local.</h2>
+              <ul>
+                <li>Audio never leaves this machine</li>
+                <li>No accounts, no sign-in</li>
+                <li>No telemetry, ever</li>
+                <li>Works fully offline</li>
+              </ul>
+              <div class="code-chip">$ freeflow status <span style="color:#2e7d4f;">● all local</span></div>
+            </div>
+          </div>
+
+          <div class="settings-pane" id="pane-about">
+            <div class="about-block">
+              <h2 class="serif" style="margin:0 0 4px;">Freeflow</h2>
+              <div class="desc" style="margin-bottom:16px;">v0.1.0 · MIT License</div>
+              <div class="row"><div>Source</div><code>github.com/freeflow/freeflow</code></div>
+              <div class="row"><div>Speech engine</div><code>whisper.cpp</code></div>
+              <div class="row"><div>Cleanup engine</div><code>Ollama</code></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. ONBOARDING -->
+    <section class="screen" id="onboarding">
+      <div class="titlebar"><div class="dots"><span></span><span></span><span></span></div>Welcome to Freeflow</div>
+      <div class="stepper" id="stepper"></div>
+      <div class="ob-body">
+        <div class="ob-pane active" data-step="0">
+          <h2 class="serif">Permissions</h2>
+          <p class="d">Freeflow needs microphone and accessibility access to type on your behalf.</p>
+          <button class="pill accent">Grant microphone access</button>
+          <button class="pill" style="margin-left:10px;">Grant accessibility access</button>
+          <p class="desc" style="margin-top:16px;">You may need to log out and back in for changes to take effect.</p>
+        </div>
+        <div class="ob-pane" data-step="1">
+          <h2 class="serif">Mic test</h2>
+          <p class="d">Say something — you should see the level bars move.</p>
+          <div class="level-bars">
+            <div class="lb" style="animation-delay:0s"></div>
+            <div class="lb" style="animation-delay:.1s"></div>
+            <div class="lb" style="animation-delay:.2s"></div>
+            <div class="lb" style="animation-delay:.3s"></div>
+            <div class="lb" style="animation-delay:.4s"></div>
+            <div class="lb" style="animation-delay:.5s"></div>
+            <div class="lb" style="animation-delay:.6s"></div>
+          </div>
+        </div>
+        <div class="ob-pane" data-step="2">
+          <h2 class="serif">Pick your shortcut</h2>
+          <p class="d">Hold this combo anywhere to dictate.</p>
+          <button class="pill">⌃ Ctrl + ⌥ Alt + ⇧ Shift (hold)</button>
+        </div>
+        <div class="ob-pane" data-step="3">
+          <h2 class="serif">Language</h2>
+          <p class="d">Freeflow auto-detects your language, or you can pin one.</p>
+          <select><option>English (auto)</option><option>Español</option><option>Français</option></select>
+        </div>
+        <div class="ob-pane" data-step="4">
+          <h2 class="serif">Try it</h2>
+          <p class="d">Hold the keys and say: <em>"um can you uh send the file"</em></p>
+          <div class="try-box">
+            <div class="raw">um can you uh send the file</div>
+            <div class="clean" id="cleanedResult"></div>
+          </div>
+          <button class="pill accent" style="margin-top:16px;" id="tryItBtn">Simulate dictation</button>
+        </div>
+      </div>
+      <div class="ob-nav">
+        <button class="pill" id="obPrev">← Prev</button>
+        <button class="pill accent" id="obNext">Next →</button>
+      </div>
+    </section>
+
+    <!-- 4. TRAY -->
+    <section class="screen" id="tray">
+      <div class="titlebar"><div class="dots"><span></span><span></span><span></span></div>System tray</div>
+      <div class="tray-stage">
+        <div class="tray-popup">
+          <div class="tray-status"><span class="status-dot"></span>Listening ready</div>
+          <div class="tray-item">Pause Freeflow</div>
+          <div class="tray-item">Open Settings</div>
+          <div class="tray-item">Dictionary</div>
+          <div class="tray-stat">12,431 words freed this week</div>
+          <div class="tray-item quit">Quit</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. V2 PREVIEW -->
+    <section class="screen" id="v2">
+      <div class="titlebar"><div class="dots"><span></span><span></span><span></span></div>Command Mode &amp; History</div>
+      <div class="v2-wrap">
+        <span class="v2-badge">v2 — not in first release</span>
+        <h3 style="margin-top:0;">Command Mode</h3>
+        <div class="cmd-row">
+          <button class="pill" disabled>"select last paragraph"</button>
+          <button class="pill" disabled>"undo that"</button>
+        </div>
+        <h3>Transcript history</h3>
+        <div class="transcript-line"><div class="t">2:14 PM</div><div>Can you send the file when you get a chance?</div></div>
+        <div class="transcript-line"><div class="t">1:58 PM</div><div>Let's meet Thursday instead of Friday.</div></div>
+        <div class="transcript-line"><div class="t">1:40 PM</div><div>Pushed the Hyprland config fix, PTAL.</div></div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<script>
+  // Tab switching
+  document.querySelectorAll('nav.tabs .pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('nav.tabs .pill').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // Settings sidebar
+  document.querySelectorAll('.settings-sidebar .sitem').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.settings-sidebar .sitem').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      document.querySelectorAll('.settings-pane').forEach(p => p.classList.remove('active'));
+      document.getElementById('pane-' + item.dataset.pane).classList.add('active');
+    });
+  });
+
+  // Flow bar state
+  const pillMock = document.getElementById('pillMock');
+  function setPillState(state) {
+    pillMock.classList.remove('listening');
+    if (state === 'idle') {
+      pillMock.innerHTML = '<span class="dot"></span>';
+    } else if (state === 'listening') {
+      pillMock.innerHTML = '<span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>';
+      pillMock.classList.add('listening');
+    } else if (state === 'processing') {
+      pillMock.innerHTML = '<span class="procdot"></span><span class="procdot"></span><span class="procdot"></span>';
+    }
+  }
+  document.querySelectorAll('.flowbar-controls .pill').forEach(btn => {
+    btn.addEventListener('click', () => setPillState(btn.dataset.state));
+  });
+
+  // Right-click context menu on pill
+  const ctxMenu = document.getElementById('ctxMenu');
+  pillMock.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    ctxMenu.classList.add('show');
+  });
+  document.addEventListener('click', e => {
+    if (!ctxMenu.contains(e.target)) ctxMenu.classList.remove('show');
+  });
+
+  // Onboarding stepper
+  const steps = ['Permissions', 'Mic test', 'Shortcut', 'Language', 'Try it'];
+  const stepperEl = document.getElementById('stepper');
+  steps.forEach((s, i) => {
+    const d = document.createElement('div');
+    d.className = 'step-dot' + (i === 0 ? ' active' : '');
+    d.textContent = i + 1;
+    d.dataset.i = i;
+    stepperEl.appendChild(d);
+  });
+  let curStep = 0;
+  function renderStep() {
+    document.querySelectorAll('.ob-pane').forEach(p => p.classList.toggle('active', +p.dataset.step === curStep));
+    document.querySelectorAll('.step-dot').forEach(d => {
+      const i = +d.dataset.i;
+      d.classList.toggle('active', i === curStep);
+      d.classList.toggle('done', i < curStep);
+    });
+    document.getElementById('obPrev').disabled = curStep === 0;
+    document.getElementById('obNext').textContent = curStep === steps.length - 1 ? 'Finish' : 'Next →';
+  }
+  document.getElementById('obPrev').addEventListener('click', () => { if (curStep > 0) { curStep--; renderStep(); } });
+  document.getElementById('obNext').addEventListener('click', () => { if (curStep < steps.length - 1) { curStep++; renderStep(); } });
+  renderStep();
+
+  document.getElementById('tryItBtn').addEventListener('click', () => {
+    const el = document.getElementById('cleanedResult');
+    el.textContent = '';
+    setTimeout(() => { el.textContent = 'Can you send the file?'; }, 400);
+  });
+</script>
