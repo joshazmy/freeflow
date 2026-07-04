@@ -165,6 +165,41 @@ def test_stop_full_pipeline_delivers_and_presses_enter(monkeypatch, tmp_path):
     assert eng.platform.media_resumed is True
 
 
+def test_start_records_before_showing_overlay(monkeypatch):
+    """Recording must never wait on the overlay -- record_start fires first."""
+    eng = make_engine(monkeypatch)
+    calls = []
+    eng.platform.record_start = lambda wav_path: calls.append("record_start")
+    eng.overlay.listening = lambda: calls.append("listening")
+    eng._start()
+    assert calls == ["record_start", "listening"]
+
+
+def test_start_failure_resumes_media_and_hides_overlay(monkeypatch):
+    eng = make_engine(monkeypatch, cfg=Config(media_pause=True))
+
+    def boom(wav_path):
+        raise RuntimeError("no mic")
+
+    eng.platform.record_start = boom
+    eng._start()
+    assert eng.platform.media_paused is True
+    assert eng.platform.media_resumed is True
+    assert "done" in eng.overlay.states
+
+
+def test_stop_empty_text_does_not_deliver(monkeypatch, tmp_path):
+    # "press enter" alone is stripped down to "" by process() -- must not deliver/press enter.
+    eng = make_engine(monkeypatch, cfg=Config(cleanup=False))
+    eng.wav_path = str(tmp_path / "rec.wav")
+    (tmp_path / "rec.wav").write_bytes(b"\x00" * 50_000)
+    monkeypatch.setattr(transcribe, "transcribe", lambda *a, **kw: "press enter")
+    eng._stop()
+    assert eng.platform.delivered is None
+    assert eng.platform.enter_pressed is False
+    assert any(s.startswith("error:") for s in eng.overlay.states)
+
+
 def test_stop_pipeline_exception_never_raises(monkeypatch, tmp_path):
     eng = make_engine(monkeypatch)
     eng.wav_path = str(tmp_path / "rec.wav")

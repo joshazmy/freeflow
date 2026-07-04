@@ -1,8 +1,6 @@
 import signal
 import subprocess
 
-import pytest
-
 from freeflow.overlay import Overlay
 
 
@@ -24,12 +22,6 @@ class FakeProc:
 
     def kill(self):
         self.killed = True
-
-
-@pytest.fixture(autouse=True)
-def no_sleep(monkeypatch):
-    import freeflow.overlay as overlay_mod
-    monkeypatch.setattr(overlay_mod.time, "sleep", lambda *_: None)
 
 
 def test_auto_mode_spawns_pill(monkeypatch):

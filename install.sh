@@ -31,6 +31,16 @@ else
 fi
 info "Detected package manager: ${PKG_MANAGER}"
 
+# ---------------------------------------------------------------------------
+# 0b. Require Python 3.11+
+# ---------------------------------------------------------------------------
+if ! command -v python3 >/dev/null 2>&1 || \
+   [ "$(python3 -c 'import sys; print(sys.version_info >= (3, 11))' 2>/dev/null)" != "True" ]; then
+  echo "Freeflow requires Python 3.11 or newer. Install/upgrade python3 and re-run." >&2
+  exit 1
+fi
+ok "python3 >= 3.11"
+
 pkg_install() {
   # $@ = list of package names FOR THE DETECTED MANAGER (caller maps names per-manager)
   case "${PKG_MANAGER}" in
@@ -88,32 +98,40 @@ for name in "${!DEPS_CHECK[@]}"; do
     missing_pkgs+=("${DEPS_MAP[$name]}")
   fi
 done
+mapfile -t missing_pkgs < <(printf '%s\n' "${missing_pkgs[@]}" | sort -u)
 
-if [ "${#missing_pkgs[@]}" -gt 0 ]; then
-  # de-duplicate (gcc-c++/build-essential and cmake can repeat across dnf/apt aliasing)
-  mapfile -t missing_pkgs < <(printf '%s\n' "${missing_pkgs[@]}" | sort -u)
-  echo "About to install (${PKG_MANAGER}): ${missing_pkgs[*]}"
-  read -r -p "Proceed with sudo install? [y/N] " reply
-  if [[ "${reply}" =~ ^[Yy]$ ]]; then
-    pkg_install "${missing_pkgs[@]}"
-    ok "installed: ${missing_pkgs[*]}"
-  else
-    echo "Cannot continue without required dependencies." >&2
-    exit 1
-  fi
-fi
-
-# Optional: pill overlay deps (gtk4-layer-shell + python3-gobject). Best-effort only.
-info "Optional pill-overlay dependencies (skipped gracefully if unavailable)"
+# Optional: pill overlay deps (gtk4-layer-shell + python3-gobject). Best-effort only --
+# folded into the SAME confirmed prompt as the required packages below, no second
+# unprompted sudo install.
 case "${PKG_MANAGER}" in
   dnf)    optional_pkgs=(gtk4-layer-shell python3-gobject) ;;
   apt)    optional_pkgs=(gir1.2-gtk-4.0 python3-gi) ;;
   pacman) optional_pkgs=(gtk4-layer-shell python-gobject) ;;
 esac
-if pkg_install "${optional_pkgs[@]}" 2>/dev/null; then
-  ok "pill overlay dependencies installed"
-else
-  warn "pill overlay dependencies not available — will fall back to notify-send overlay"
+
+if [ "${#missing_pkgs[@]}" -gt 0 ] || [ "${#optional_pkgs[@]}" -gt 0 ]; then
+  echo "About to install (${PKG_MANAGER}):"
+  [ "${#missing_pkgs[@]}" -gt 0 ] && echo "  required: ${missing_pkgs[*]}"
+  [ "${#optional_pkgs[@]}" -gt 0 ] && echo "  optional (pill overlay): ${optional_pkgs[*]}"
+  read -r -p "Proceed with sudo install? [y/N] " reply
+  if [[ "${reply}" =~ ^[Yy]$ ]]; then
+    if [ "${#missing_pkgs[@]}" -gt 0 ]; then
+      pkg_install "${missing_pkgs[@]}"
+      ok "installed: ${missing_pkgs[*]}"
+    fi
+    if [ "${#optional_pkgs[@]}" -gt 0 ]; then
+      if pkg_install "${optional_pkgs[@]}" 2>/dev/null; then
+        ok "pill overlay dependencies installed"
+      else
+        warn "pill overlay dependencies not available — will fall back to notify-send overlay"
+      fi
+    fi
+  elif [ "${#missing_pkgs[@]}" -gt 0 ]; then
+    echo "Cannot continue without required dependencies." >&2
+    exit 1
+  else
+    warn "skipped optional pill overlay dependencies — will fall back to notify-send overlay"
+  fi
 fi
 
 # ---------------------------------------------------------------------------
@@ -140,7 +158,7 @@ else
   if [ -d "${WHISPER_DIR}/.git" ]; then
     skip "whisper.cpp clone"
   else
-    git clone --depth 1 https://github.com/ggerganov/whisper.cpp "${WHISPER_DIR}"
+    git clone --depth 1 --branch v1.7.6 https://github.com/ggerganov/whisper.cpp "${WHISPER_DIR}"
     ok "cloned whisper.cpp"
   fi
 
@@ -185,6 +203,22 @@ if command -v uv >/dev/null 2>&1; then
   uv tool install --force "${REPO_DIR}"
   ok "installed via uv tool"
 else
+  if ! python3 -m pip --version >/dev/null 2>&1; then
+    case "${PKG_MANAGER}" in
+      dnf)    pip_pkg="python3-pip" ;;
+      apt)    pip_pkg="python3-pip" ;;
+      pacman) pip_pkg="python-pip" ;;
+    esac
+    echo "pip not found; about to install (${PKG_MANAGER}): ${pip_pkg}"
+    read -r -p "Proceed with sudo install? [y/N] " reply
+    if [[ "${reply}" =~ ^[Yy]$ ]]; then
+      pkg_install "${pip_pkg}"
+      ok "installed: ${pip_pkg}"
+    else
+      echo "Cannot continue without pip (or install 'uv' instead)." >&2
+      exit 1
+    fi
+  fi
   python3 -m pip install --user "${REPO_DIR}"
   ok "installed via pip --user"
 fi
@@ -200,13 +234,20 @@ else
   if [ -z "${YDOTOOLD_BIN}" ]; then
     warn "ydotoold binary not found — ydotool package should provide it, check install"
   else
+    INPUT_GID="$(getent group input | cut -d: -f3)"
+    if [ -z "${INPUT_GID}" ]; then
+      sudo groupadd -r input
+      INPUT_GID="$(getent group input | cut -d: -f3)"
+    fi
+    # socket-perm=0666 would let ANY local user inject keystrokes into your session.
+    # Restrict to the 'input' group (the installer adds you to it below) instead.
     sudo tee /etc/systemd/system/ydotoold.service >/dev/null <<EOF
 [Unit]
 Description=ydotool daemon (uinput-based input injection for Freeflow)
 After=local-fs.target
 
 [Service]
-ExecStart=${YDOTOOLD_BIN} --socket-path=/run/ydotoold.socket --socket-perm=0666
+ExecStart=${YDOTOOLD_BIN} --socket-path=/run/ydotoold.socket --socket-own=0:${INPUT_GID} --socket-perm=0660
 Restart=on-failure
 
 [Install]

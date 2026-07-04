@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import tempfile
 
 from freeflow import cleanup, context, transcribe
 from freeflow.config import Config
@@ -31,22 +32,33 @@ class Engine:
         self.platform = get_platform()
         self.overlay = Overlay(cfg.overlay)
         self.dictionary = Dictionary(cfg.dictionary_path)
-        run_dir = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "freeflow")
-        os.makedirs(run_dir, exist_ok=True)
+        xdg_runtime = os.environ.get("XDG_RUNTIME_DIR")
+        if xdg_runtime:
+            run_dir = os.path.join(xdg_runtime, "freeflow")
+            os.makedirs(run_dir, mode=0o700, exist_ok=True)
+        else:
+            # No XDG_RUNTIME_DIR (e.g. not a login session) -- a predictable /tmp/freeflow
+            # path would be guessable by other local users, so use a private mkdtemp instead.
+            run_dir = tempfile.mkdtemp(prefix="freeflow-")
         self.wav_path = os.path.join(run_dir, "rec.wav")
 
     def run(self) -> None:
         self.platform.watch_keys(self.cfg, self._start, self._stop)
 
     def _start(self) -> None:
+        media_paused = False
         try:
             if self.cfg.media_pause:
-                self.platform.media_pause()
-            self.overlay.listening()
+                media_paused = self.platform.media_pause()
+            # Recording must never wait on the overlay -- start it first.
             self.platform.record_start(self.wav_path)
+            self.overlay.listening()
         except Exception:
             log.exception("failed to start dictation")
             self.overlay.error("failed to start recording")
+            self.overlay.done()
+            if media_paused:
+                self.platform.media_resume()
 
     def _stop(self) -> None:
         try:
@@ -62,6 +74,9 @@ class Engine:
                 return
 
             final, do_press_enter = self.process(text)
+            if not final.strip():
+                self.overlay.error("no speech detected")
+                return
             self.platform.deliver(final, self.cfg)
             if do_press_enter:
                 self.platform.press_enter()

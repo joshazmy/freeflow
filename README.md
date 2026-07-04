@@ -98,6 +98,9 @@ Edit `~/.config/freeflow/config.toml` (created on first run by `freeflow config 
 Everything runs on your machine: audio never leaves it, transcription is local whisper.cpp,
 cleanup is a local Ollama model. No cloud calls, no telemetry, no accounts, ever.
 
+This holds as long as `server` and `ollama_url` point at localhost (the default) — if you
+repoint either at a remote host, your dictations are sent there.
+
 ## License
 
 MIT.

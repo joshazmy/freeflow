@@ -2,7 +2,6 @@
 import signal
 import subprocess
 import sys
-import time
 
 
 def _notify(title: str, ms: int = 1500) -> None:
@@ -30,9 +29,16 @@ class Overlay:
             self._proc = None
             self.mode = "notify"
             return
-        # If the pill dies immediately (no gi/layer-shell), fall back for the session.
-        time.sleep(0.5)
+        # Don't block the hot path waiting on the pill's health -- a non-blocking poll
+        # catches an immediate exec failure; anything slower is caught in processing()/done().
         if self._proc.poll() not in (None, 0):
+            self._proc = None
+            self.mode = "notify"
+
+    def _check_pill_alive(self) -> None:
+        """Deferred health check: if the pill process has since exited nonzero, fall
+        back to notify for the rest of the session."""
+        if self._proc is not None and self._proc.poll() not in (None, 0):
             self._proc = None
             self.mode = "notify"
 
@@ -63,7 +69,11 @@ class Overlay:
             if self.mode == "off":
                 return
             if self.mode == "auto":
-                self._signal_pill(signal.SIGUSR1)
+                self._check_pill_alive()
+                if self.mode == "auto":
+                    self._signal_pill(signal.SIGUSR1)
+                else:
+                    _notify("\U0001F399 Processing…", 1500)
         except Exception:
             pass
 
@@ -71,6 +81,8 @@ class Overlay:
         try:
             if self.mode == "off":
                 return
+            if self.mode == "auto":
+                self._check_pill_alive()
             if self.mode == "auto" and self._proc is not None:
                 proc = self._proc
                 self._proc = None

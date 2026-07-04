@@ -12,6 +12,11 @@ _WORK_CHAT_APPS = {"slack", "teams"}
 _PERSONAL_CHAT_APPS = {"discord", "telegram", "signal", "whatsapp", "element"}
 _EMAIL_TITLE_HINTS = ("gmail", "proton mail")
 
+# Once a detector succeeds, remember it for the process lifetime so every dictation
+# doesn't retry the other (failing) backend first. Falls back once if the cached
+# backend later fails.
+_cached_detector = None
+
 
 def _from_hyprctl() -> tuple[str, str] | None:
     try:
@@ -65,9 +70,19 @@ def _from_swaymsg() -> tuple[str, str] | None:
 
 def active_app() -> tuple[str, str]:
     """Return (app_class, window_title), lowercased class; ("", "") on failure."""
-    for detector in (_from_hyprctl, _from_swaymsg):
+    global _cached_detector
+    detectors = (_from_hyprctl, _from_swaymsg)
+
+    if _cached_detector is not None:
+        result = _cached_detector()
+        if result is not None:
+            return result
+        _cached_detector = None  # cached backend failed -- allow one fallback below
+
+    for detector in detectors:
         result = detector()
         if result is not None:
+            _cached_detector = detector
             return result
     return "", ""
 

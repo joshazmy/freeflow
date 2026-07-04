@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import re
+import tempfile
 
 
 class Dictionary:
@@ -61,7 +62,8 @@ class Dictionary:
         self._rewrite()
 
     def _rewrite(self) -> None:
-        os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
+        directory = os.path.dirname(self.path) or "."
+        os.makedirs(directory, exist_ok=True)
         lines = []
         seen_right = set()
         for wrong, right in self._pairs.items():
@@ -71,8 +73,19 @@ class Dictionary:
                     seen_right.add(right)
             else:
                 lines.append(f"{wrong}->{right}")
-        with open(self.path, "w", encoding="utf-8") as f:
-            f.write("\n".join(lines) + ("\n" if lines else ""))
+        content = "\n".join(lines) + ("\n" if lines else "")
+
+        fd, tmp_path = tempfile.mkstemp(dir=directory, prefix=".dictionary-", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(content)
+            os.replace(tmp_path, self.path)
+        except BaseException:
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+            raise
 
     def apply(self, text: str) -> str:
         if not self._pairs:
