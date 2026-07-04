@@ -64,7 +64,11 @@ class SettingsWindow(Gtk.ApplicationWindow):
 
         self.stack = Gtk.Stack()
         self.stack.set_vexpand(True)
-        content_box.append(self.stack)
+        # scroll instead of clipping controls off-screen when the window is tiled small
+        scroller = Gtk.ScrolledWindow(hexpand=True, vexpand=True)
+        scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        scroller.set_child(self.stack)
+        content_box.append(scroller)
 
         for pane_id, title, build in PANES:
             row = Gtk.ListBoxRow()

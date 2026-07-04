@@ -45,7 +45,6 @@ def build_css(dark: bool) -> str:
         danger = DARK_DANGER
         switch_unchecked_bg = DARK_CARD
         switch_border = f"alpha({CREAM}, 0.35)"
-        switch_knob = CREAM
     else:
         bg = CREAM
         card_bg = "#FFFFFF"
@@ -56,7 +55,6 @@ def build_css(dark: bool) -> str:
         danger = LIGHT_DANGER
         switch_unchecked_bg = CREAM
         switch_border = INK
-        switch_knob = INK
 
     return f"""
 window {{
@@ -138,23 +136,39 @@ list.ff-sidebar row:selected {{
 }}
 
 switch {{
+    min-width: 46px;
+    min-height: 24px;
     border-radius: 999px;
     border: 1px solid {switch_border};
     background-color: {switch_unchecked_bg};
     background-image: none;
     box-shadow: none;
+    padding: 2px;
 }}
 
 switch:checked {{
     background-color: {LAVENDER};
+    border-color: {INK if not dark else switch_border};
     background-image: none;
 }}
 
 switch slider {{
+    min-width: 18px;
+    min-height: 18px;
     border-radius: 999px;
-    background-color: {switch_knob};
+    border: 1px solid {switch_border};
+    background-color: {card_bg};
     background-image: none;
     box-shadow: none;
+}}
+
+switch:checked slider {{
+    background-color: {INK};
+    border-color: {INK};
+}}
+
+switch image {{
+    opacity: 0;
 }}
 """
 
@@ -183,7 +197,10 @@ def apply_style(dark: bool = False) -> None:
     if display is not None:
         if _current_provider is not None:
             Gtk.StyleContext.remove_provider_for_display(display, _current_provider)
+        # USER+1: Freeflow is a fully-designed app — its look must survive desktop
+        # rice that ships a ~/.config/gtk-4.0/gtk.css (priority USER=800 beats
+        # APPLICATION=600, which left e.g. switches half-themed under such setups).
         Gtk.StyleContext.add_provider_for_display(
-            display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+            display, provider, Gtk.STYLE_PROVIDER_PRIORITY_USER + 1
         )
     _current_provider = provider
