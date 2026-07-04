@@ -9,10 +9,12 @@ import logging
 import os
 import re
 import tempfile
+import time
 
 from freeflow import cleanup, context, transcribe
 from freeflow.config import Config
 from freeflow.dictionary import Dictionary
+from freeflow.history import History
 from freeflow.overlay import Overlay
 from freeflow.platform import get_platform
 
@@ -41,6 +43,8 @@ class Engine:
             # path would be guessable by other local users, so use a private mkdtemp instead.
             run_dir = tempfile.mkdtemp(prefix="freeflow-")
         self.wav_path = os.path.join(run_dir, "rec.wav")
+        self._last_app = ""
+        self._last_tone = ""
 
     def run(self) -> None:
         self.platform.watch_keys(self.cfg, self._start, self._stop)
@@ -78,6 +82,18 @@ class Engine:
                 self.overlay.error("no speech detected")
                 return
             self.platform.deliver(final, self.cfg)
+            if self.cfg.history:
+                try:
+                    History().append(
+                        raw=text,
+                        cleaned=final,
+                        app=self._last_app,
+                        tone=self._last_tone,
+                        ts=time.time(),
+                    )
+                except Exception:
+                    # History is best-effort -- must never break a dictation.
+                    log.debug("history append failed", exc_info=True)
             if do_press_enter:
                 self.platform.press_enter()
         except Exception:
@@ -108,6 +124,8 @@ class Engine:
 
         app_class, title = context.active_app()
         tone = context.tone_for(app_class, title, self.cfg)
+        self._last_app = app_class
+        self._last_tone = tone
 
         if self.cfg.cleanup:
             text = cleanup.clean(text, tone, self.cfg, hint_words=self.dictionary.words)

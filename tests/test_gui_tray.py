@@ -38,6 +38,7 @@ def test_indicator_builds_in_gtk3_subprocess():
         pytest.skip("AppIndicator3 typelib not available")
     assert out.startswith("Open Settings|")
     assert "dictation" in out
+    assert "Default tone" in out
     assert out.endswith("Quit tray")
 
 
@@ -97,3 +98,27 @@ def test_toggle_dictation_swallows_errors(monkeypatch):
 def test_toggle_label():
     assert tray.toggle_label(True) == "Pause dictation"
     assert tray.toggle_label(False) == "Resume dictation"
+
+
+def test_current_default_tone_defaults_to_neutral(tmp_path):
+    cfg_path = tmp_path / "config.toml"
+    assert tray.current_default_tone(str(cfg_path)) == "neutral"
+
+
+def test_set_default_tone_persists_and_is_read_back(tmp_path):
+    cfg_path = tmp_path / "config.toml"
+    tray.set_default_tone("casual", str(cfg_path))
+    assert tray.current_default_tone(str(cfg_path)) == "casual"
+
+
+def test_set_default_tone_preserves_other_overrides(tmp_path):
+    cfg_path = tmp_path / "config.toml"
+    tray.set_default_tone("formal", str(cfg_path))
+    # a per-app override set independently must survive a later _default change
+    from freeflow.config import save_values
+    save_values({"tone_overrides": {"_default": "formal", "slack": "casual"}}, str(cfg_path))
+    tray.set_default_tone("neutral", str(cfg_path))
+    from freeflow.config import load
+    cfg = load(str(cfg_path))
+    assert cfg.tone_overrides["_default"] == "neutral"
+    assert cfg.tone_overrides["slack"] == "casual"

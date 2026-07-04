@@ -27,6 +27,7 @@ class Config:
     overlay: str = "auto"            # "auto" | "notify" | "off"
     tone_overrides: dict = field(default_factory=dict)  # app_class(lower) -> formal|casual|neutral
     media_pause: bool = True
+    history: bool = True     # record dictations to a local history file
 
 
 def _parse_env_value(raw: str, typ):
@@ -108,6 +109,9 @@ overlay = "auto"
 
 # Pause/resume media playback around a dictation.
 media_pause = true
+
+# Record dictations to a local history file (~/.local/share/freeflow/history.jsonl).
+history = true
 
 # Per-app tone overrides, e.g. tone_overrides.slack = "casual"
 [tone_overrides]
