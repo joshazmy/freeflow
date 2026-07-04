@@ -95,3 +95,25 @@ def test_save_values_creates_file_when_missing(tmp_path):
     p = tmp_path / "config.toml"
     save_values({"language": "auto"}, str(p))
     assert load(str(p)).language == "auto"
+
+
+def test_save_values_preserves_foreign_sections_and_root_placement(tmp_path):
+    from freeflow.config import save_values, load
+    p = tmp_path / "config.toml"
+    p.write_text('language = "en"\n\n[custom]\nfoo = "bar"\n\n[tone_overrides]\nslack = "casual"\n')
+    save_values({"threads": 4, "tone_overrides": {"slack": "formal"}}, str(p))
+    text = p.read_text()
+    assert "[custom]" in text and 'foo = "bar"' in text     # foreign section survives
+    cfg = load(str(p))
+    assert cfg.threads == 4                                  # new key readable at root
+    assert cfg.tone_overrides == {"slack": "formal"}
+    import tomllib
+    data = tomllib.loads(text)
+    assert data["threads"] == 4                              # NOT inside [custom]
+
+
+def test_save_values_escapes_control_chars(tmp_path):
+    from freeflow.config import save_values, load
+    p = tmp_path / "config.toml"
+    save_values({"ollama_model": "bad\nname\tx"}, str(p))
+    assert load(str(p)).ollama_model == "bad\nname\tx"       # file stays parseable

@@ -13,7 +13,7 @@ import threading
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, GLib  # noqa: E402
+from gi.repository import Gio, Gtk, GLib  # noqa: E402
 
 from freeflow.config import CONFIG_DIR, load
 from freeflow.gui.state import GuiContext
@@ -48,8 +48,8 @@ def user_in_input_group() -> bool:
 
 
 def ydotool_socket_present() -> bool:
-    socket = os.environ.get("YDOTOOL_SOCKET", "/run/ydotoold.socket")
-    return os.path.exists(socket)
+    socket_path = os.environ.get("YDOTOOL_SOCKET", "/run/ydotoold.socket")
+    return os.path.exists(socket_path)
 
 
 def record_mic_sample(path: str, duration: int = 2) -> None:
@@ -191,12 +191,23 @@ class OnboardingWindow(Gtk.ApplicationWindow):
         record_btn.add_css_class("ff-pill-active")
 
         def on_record(_btn) -> None:
-            passed = mic_test_passed()
-            result.set_label("✅ mic looks good" if passed else "❌ no audio captured")
+            record_btn.set_sensitive(False)
+
+            def worker() -> None:
+                passed = mic_test_passed()
+
+                def report() -> None:
+                    result.set_label("✅ mic looks good" if passed else "❌ no audio captured")
+                    record_btn.set_sensitive(True)
+
+                GLib.idle_add(report)
+
+            threading.Thread(target=worker, daemon=True).start()
 
         record_btn.connect("clicked", on_record)
         box.append(record_btn)
         box.append(result)
+        self._record_btn = record_btn
         self._mic_result = result
         return box
 
@@ -299,7 +310,11 @@ class OnboardingWindow(Gtk.ApplicationWindow):
             def worker() -> None:
                 from freeflow import engine as engine_mod
 
-                cleaned, _press_enter = engine_mod.Engine(cfg).process(text)
+                try:
+                    cleaned, _press_enter = engine_mod.Engine(cfg).process(text)
+                except Exception as exc:
+                    GLib.idle_add(result.set_label, f"Couldn't run the engine: {exc}")
+                    return
                 GLib.idle_add(result.set_label, cleaned)
 
             threading.Thread(target=worker, daemon=True).start()
@@ -314,9 +329,20 @@ class OnboardingWindow(Gtk.ApplicationWindow):
 
 
 def main(argv=None) -> int:
-    app = Gtk.Application(application_id="io.github.joshazmy.freeflow.onboarding")
+    # ponytail: NON_UNIQUE — this is a short-lived, one-shot wizard. With the
+    # default unique/D-Bus-activated GApplication, a second `freeflow onboarding`
+    # invocation doesn't open its own window: it re-activates whatever instance
+    # is still registered (e.g. a background process left over from an earlier
+    # run), which may already be sitting on a later step. That's the real cause
+    # behind the wizard appearing to "open on Mic test" instead of Permissions.
+    app = Gtk.Application(
+        application_id="io.github.joshazmy.freeflow.onboarding",
+        flags=Gio.ApplicationFlags.NON_UNIQUE,
+    )
 
     def on_activate(app) -> None:
+        from freeflow.gui.style import apply_style
+        apply_style()
         cfg = load()
         ctx = GuiContext(cfg=cfg)
         win = OnboardingWindow(application=app, ctx=ctx)

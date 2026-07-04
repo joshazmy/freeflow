@@ -147,6 +147,78 @@ def test_language_step_saves_language(tmp_path):
     assert load(ctx.config_path).language == code
 
 
+def test_mic_test_runs_off_main_thread_and_reenables_button(tmp_path, monkeypatch):
+    gi = pytest.importorskip("gi")
+    gi.require_version("Gtk", "4.0")
+    from gi.repository import Gtk, GLib
+
+    if not Gtk.init_check():
+        pytest.skip("no display available")
+
+    import threading
+
+    main_thread = threading.current_thread()
+    seen_threads = []
+
+    def fake_mic_test_passed(duration=2):
+        seen_threads.append(threading.current_thread())
+        return True
+
+    monkeypatch.setattr(onboarding, "mic_test_passed", fake_mic_test_passed)
+
+    ctx = _ctx(tmp_path)
+    win = onboarding.OnboardingWindow(application=None, ctx=ctx)
+    win._record_btn.emit("clicked")
+
+    # button must be disabled immediately (before the worker thread finishes)
+    assert win._record_btn.get_sensitive() is False
+
+    for _ in range(200):
+        while GLib.MainContext.default().iteration(False):
+            pass
+        if win._mic_result.get_label():
+            break
+        import time
+        time.sleep(0.01)
+
+    assert seen_threads and seen_threads[0] is not main_thread
+    assert win._mic_result.get_label() == "✅ mic looks good"
+    assert win._record_btn.get_sensitive() is True
+
+
+def test_tryit_step_shows_error_when_engine_raises(tmp_path, monkeypatch):
+    gi = pytest.importorskip("gi")
+    gi.require_version("Gtk", "4.0")
+    from gi.repository import Gtk, GLib
+
+    if not Gtk.init_check():
+        pytest.skip("no display available")
+
+    class BoomEngine:
+        def __init__(self, cfg):
+            pass
+
+        def process(self, text):
+            raise RuntimeError("ollama offline")
+
+    import freeflow.engine as real_engine
+    monkeypatch.setattr(real_engine, "Engine", BoomEngine)
+
+    ctx = _ctx(tmp_path)
+    win = onboarding.OnboardingWindow(application=None, ctx=ctx)
+    win._tryit_run_btn.emit("clicked")
+
+    for _ in range(200):
+        while GLib.MainContext.default().iteration(False):
+            pass
+        if win._tryit_result.get_label():
+            break
+        import time
+        time.sleep(0.01)
+
+    assert win._tryit_result.get_label() == "Couldn't run the engine: ollama offline"
+
+
 def test_tryit_step_runs_engine_and_shows_result(tmp_path, monkeypatch):
     gi = pytest.importorskip("gi")
     gi.require_version("Gtk", "4.0")
