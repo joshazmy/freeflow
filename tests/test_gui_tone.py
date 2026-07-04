@@ -42,6 +42,18 @@ def test_per_app_overrides_excludes_category_keys(tmp_path):
     assert tone.per_app_overrides(ctx.cfg) == {"discord": "casual", "thunderbird": "formal"}
 
 
+def test_tone_explanations_order_and_content():
+    tones = [t for t, _, _ in tone.TONE_EXPLANATIONS]
+    assert tones == ["formal", "neutral", "casual"]
+    for _, meaning, example in tone.TONE_EXPLANATIONS:
+        assert meaning
+        assert example
+    by_tone = {t: (m, e) for t, m, e in tone.TONE_EXPLANATIONS}
+    assert "report by Friday" in by_tone["formal"][1]
+    assert "report by Friday" in by_tone["neutral"][1]
+    assert "report by friday" in by_tone["casual"][1]
+
+
 # ---- widget tests ----
 
 gi = pytest.importorskip("gi")

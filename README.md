@@ -20,6 +20,32 @@ browser, chat, whatever you were typing into.
 Double-tap the chord instead of holding it and Freeflow switches to hands-free continuous mode —
 tap it again to stop.
 
+## How it works (no cloud)
+
+Never used a local speech model before? Here's the whole thing in plain English:
+
+1. **You hold the hotkey and talk.** Freeflow records audio only while the key is held.
+2. **Your voice is transcribed on your own machine** by [whisper.cpp](https://github.com/ggerganov/whisper.cpp),
+   a local speech model — no cloud API, no account, nothing you say leaves your computer.
+3. **A small local AI ([Ollama](https://ollama.com)) tidies the words up** — removes "um"/"uh",
+   fixes punctuation and capitalization, applies your tone. If Ollama is off or slow, you still get
+   the raw transcription; dictation never blocks on cleanup.
+4. **You release the key and the cleaned text is typed** wherever your cursor is.
+
+Both the speech model and the cleanup model run on `localhost`. The only network access is when
+*you* choose to download a model. Nothing is sent anywhere else, ever.
+
+## Quickstart
+
+```
+git clone <this-repo> && cd freeflow
+./install.sh          # prints a plan, asks once, then installs everything locally
+freeflow onboarding   # 6-step first-run setup (starts with "What is Freeflow?")
+```
+
+Then hold **⌃ Ctrl + ⌥ Alt + ⇧ Shift**, speak, and release. To remove everything later, run
+`./uninstall.sh`.
+
 ## Features
 
 | Feature | Status |
@@ -106,6 +132,21 @@ Edit `~/.config/freeflow/config.toml` (created on first run by `freeflow config 
   support X11.
 - **AI cleanup silently not happening**: cleanup failures degrade gracefully to raw transcribed
   text by design (never blocks dictation) — check `ollama list` and `freeflow status` to see why.
+
+## Uninstall
+
+`./uninstall.sh` is the mirror of the installer — it removes exactly what `install.sh` created and
+nothing else:
+
+```
+./uninstall.sh --dry-run   # show what WOULD be removed, delete nothing
+./uninstall.sh             # actually remove
+```
+
+It stops and disables the `freeflow` user service, removes the unit file, the whisper.cpp build,
+and the installed program. Your **downloaded models** and your **config + dictionary + history**
+are your data, so it asks about each one separately before deleting — and prints every path first.
+It never touches anything Freeflow didn't create.
 
 ## Privacy
 

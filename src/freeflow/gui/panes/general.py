@@ -133,6 +133,23 @@ def build(ctx) -> Gtk.Widget:
         "Paste result", "Off = type character-by-character instead", paste_sw
     ))
 
+    # Dark mode switch — live, no restart banner
+    dark_sw = Gtk.Switch(active=getattr(ctx.cfg, "dark", False))
+    dark_sw.set_name("switch-dark")
+
+    def on_dark_toggled(sw, _pspec):
+        ctx.save(dark=sw.get_active(), _restart=False)
+        try:
+            from freeflow.gui.style import apply_style
+            apply_style(dark=sw.get_active())
+        except TypeError:
+            pass
+
+    dark_sw.connect("notify::active", on_dark_toggled)
+    root.append(_row(
+        "Dark mode", "Warm dark theme; applies instantly", dark_sw
+    ))
+
     # Language pill row
     lang_row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
     lang_buttons = []

@@ -24,8 +24,8 @@ class FreeflowApp(Gtk.Application):
         self.connect("activate", self._on_activate)
 
     def _on_activate(self, app) -> None:
-        apply_style()
         cfg = load_config(self.config_path)
+        apply_style(dark=cfg.dark)
         ctx = GuiContext(cfg=cfg, config_path=self.config_path)
         if self.window is None:
             self.window = SettingsWindow(application=app, ctx=ctx)

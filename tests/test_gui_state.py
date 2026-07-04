@@ -30,6 +30,25 @@ def test_save_updates_cfg_file_and_flags_restart(tmp_path):
     assert events == [1, 1]
 
 
+def test_save_restart_false_persists_but_skips_restart_flag(tmp_path):
+    ctx = _ctx(tmp_path)
+    events = []
+    ctx.on_restart_needed = lambda: events.append(1)
+
+    ctx.save(paste=False, _restart=False)
+
+    assert ctx.cfg.paste is False                       # mirrored onto cfg
+    assert load(ctx.config_path).paste is False          # persisted
+    assert ctx.restart_needed is False                   # not flagged
+    assert events == []                                  # hook not called
+
+
+def test_save_default_restart_still_flags(tmp_path):
+    ctx = _ctx(tmp_path)
+    ctx.save(paste=False)
+    assert ctx.restart_needed is True
+
+
 def test_save_tone_overrides_roundtrip(tmp_path):
     ctx = _ctx(tmp_path)
     ctx.save(tone_overrides={"discord": "casual"})

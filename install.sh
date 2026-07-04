@@ -19,6 +19,18 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REBOOT_NEEDED=0
 USER="${USER:-$(id -un)}"   # podman exec / minimal shells do not set USER; set -u would abort
 
+ASSUME_YES=0
+for arg in "$@"; do
+  case "${arg}" in
+    -y|--yes) ASSUME_YES=1 ;;
+    -h|--help)
+      echo "Usage: ./install.sh [-y|--yes]"
+      echo "  -y, --yes   non-interactive: skip the up-front confirmation prompt"
+      exit 0 ;;
+    *) echo "Unknown option: ${arg}" >&2; exit 1 ;;
+  esac
+done
+
 ok()   { echo "  ✅ $*"; }
 skip() { echo "  ⏭  $* (already done)"; }
 info() { echo "==> $*"; }
@@ -53,6 +65,40 @@ pkg_have() {
   # $1 = command to check for presence (proxy for "package already installed")
   command -v "$1" >/dev/null 2>&1
 }
+
+# ---------------------------------------------------------------------------
+# Plan + one confirmation before anything is touched
+# ---------------------------------------------------------------------------
+cat <<PLAN
+
+Freeflow installer — here is exactly what will happen and where:
+
+  1. System packages via ${PKG_MANAGER} (git, cmake, compiler, pipewire, ydotool,
+     wl-clipboard, GTK4 — a sudo prompt confirms these separately).
+  2. Build whisper.cpp (the local speech engine) in:
+         ${WHISPER_DIR}
+  3. Download one whisper model (auto-picked for your GPU) into:
+         ${MODELS_DIR}
+  4. Install the 'freeflow' program (uv tool, or pip --user) → ~/.local/bin/freeflow
+  5. ydotool input daemon as a system service, and add you to the 'input' group (sudo).
+  6. Ollama model pull for AI cleanup (optional — skipped if Ollama isn't installed).
+  7. Write config:
+         ${FREEFLOW_CONFIG}/config.toml
+     and a systemd user unit:
+         ${HOME}/.config/systemd/user/freeflow.service
+
+Everything runs locally — no account, no cloud. Every step is idempotent (safe to re-run).
+To remove all of this later:  ./uninstall.sh
+
+PLAN
+
+if [ "${ASSUME_YES}" -ne 1 ]; then
+  read -r -p "Proceed with the install above? [y/N] " reply
+  if [[ ! "${reply}" =~ ^[Yy]$ ]]; then
+    echo "Aborted — nothing was changed."
+    exit 0
+  fi
+fi
 
 # ---------------------------------------------------------------------------
 # 1. System dependencies
@@ -358,14 +404,16 @@ fi
 # ---------------------------------------------------------------------------
 info "Step 9/9: done"
 echo
-echo "Freeflow is installed."
+echo "Freeflow is installed. Next steps:"
+echo "  1. First time?    freeflow onboarding   # 6-step setup: what it is, permissions, mic, hotkey, try it"
+echo "  2. Hotkey:        hold Left Ctrl + Left Alt + Left Shift, speak, release"
+echo "  3. Start now:     systemctl --user start freeflow"
+echo "  4. Verify:        freeflow status"
+echo "  5. Settings GUI:  freeflow gui"
+echo
 echo "  GPU backend:   ${GPU_BACKEND}"
 echo "  Whisper model: ${MODEL_PATH}"
-echo "  Hotkey:        hold Left Ctrl + Left Alt + Left Shift, speak, release"
-echo "  Verify:        freeflow status"
-echo "  Start now:     systemctl --user start freeflow"
-echo "  First time?    freeflow onboarding"
-echo "  Settings GUI:  freeflow gui"
+echo "  Remove everything:  ./uninstall.sh"
 echo
 if [ "${REBOOT_NEEDED}" -eq 1 ]; then
   echo -e "\033[0;31m⚠️  You were added to the 'input' group — log out and back in before using Freeflow.\033[0m"

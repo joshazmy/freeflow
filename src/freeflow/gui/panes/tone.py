@@ -34,6 +34,20 @@ _CATEGORY_DEFAULTS = {
     "_default": "neutral",
 }
 
+# Static explanation of what each tone does, for the sample dictation:
+# "um so basically can you uh send me the report by friday". No Ollama call --
+# these are fixed strings for the "What the tones mean" card.
+TONE_EXPLANATIONS: list[tuple[str, str, str]] = [
+    ("formal", "Full sentences, no contractions, polite.",
+     "Could you please send me the report by Friday? Thank you."),
+    ("neutral", "Clean and direct, contractions fine.",
+     "Can you send me the report by Friday?"),
+    ("casual", "Relaxed, chat-style.",
+     "hey, can you send me the report by friday?"),
+]
+
+TONE_FILLER_NOTE = "Fillers are removed by cleanup in every tone; tone only changes the voice."
+
 
 def category_tone(cfg, key: str) -> str:
     return (cfg.tone_overrides or {}).get(key, _CATEGORY_DEFAULTS.get(key, "neutral"))
@@ -82,9 +96,43 @@ def _row(label_text: str, control: Gtk.Widget) -> Gtk.Box:
     return row
 
 
+def _explanations_card() -> Gtk.Widget:
+    card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+    card.add_css_class("ff-card")
+    card.set_name("tone-explanations-card")
+
+    heading = Gtk.Label(label="What the tones mean", xalign=0)
+    heading.add_css_class("ff-serif")
+    card.append(heading)
+
+    sample = Gtk.Label(
+        label='“um so basically can you uh send me the report by friday”', xalign=0
+    )
+    sample.add_css_class("ff-muted")
+    card.append(sample)
+
+    for name, meaning, example in TONE_EXPLANATIONS:
+        row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        name_lbl = Gtk.Label(label=f"{name.capitalize()} — {meaning}", xalign=0)
+        row.append(name_lbl)
+        example_lbl = Gtk.Label(label=example, xalign=0)
+        example_lbl.add_css_class("ff-pill-active")
+        example_lbl.add_css_class("ff-mono")
+        row.append(example_lbl)
+        card.append(row)
+
+    footnote = Gtk.Label(label=TONE_FILLER_NOTE, xalign=0)
+    footnote.add_css_class("ff-muted")
+    card.append(footnote)
+
+    return card
+
+
 def build(ctx) -> Gtk.Widget:
     root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
     root.add_css_class("ff-card")
+
+    root.append(_explanations_card())
 
     def save_tone(key: str, level: str) -> None:
         overrides = dict(ctx.cfg.tone_overrides or {})
