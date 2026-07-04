@@ -42,7 +42,9 @@ Type-only + a CSS recreation of Freeflow's on-screen dictation pill (rounded pil
 4 animated lavender-tinted bars, caption "hold ⌃ ⌥ ⇧ … speak … release"). No WebGL, no video.
 
 ## Layout (sections, in order)
-1. **Nav**: italic serif "Freeflow" wordmark left; right: GitHub pill (ink border) + accent pill "Install".
+1. **Nav**: logo lockup left (Josh's wordmark option 1a: lowercase Jura "freeflow", 0.34em
+   tracking, animated dashed wave underneath, ink on cream, self-hosted Jura, wave pauses under
+   reduced-motion); right: GitHub pill (ink border) + accent pill "Install". Footer reuses the lockup.
 2. **Hero** (~92dvh): eyebrow mono chip "$ 100% local dictation for Linux"; H1 serif "Speak.
    It types." two lines; sub one sentence; CTA row: accent pill "Get Freeflow" (→ GitHub) + ghost
    pill "How it works" (→ #how); below: the animated dictation pill demo.
@@ -60,7 +62,7 @@ Type-only + a CSS recreation of Freeflow's on-screen dictation pill (rounded pil
 7. **Footer**: wordmark, MIT License, GitHub link, "Built for Linux (Wayland). No cloud anywhere."
 
 Mobile (390): single column, steps stack, feature grid 1-col, pill demo shrinks, nav collapses to
-wordmark + GitHub pill.
+wordmark + Install pill (keep the primary CTA; GitHub stays reachable via hero + footer).
 
 ## Copy rules
 Plain English, verb-first, no em-dashes anywhere in page copy, no marketing superlatives the app

@@ -8,3 +8,7 @@
 - Green #2e7d4f allowed as SEMANTIC status color only (all-local dot); lavender stays the one accent.
 - Deploy: GitHub Pages via Actions (site/ → dist, vite base '/freeflow/'). Never a second repo.
 - Gates waived by Josh for this run ("push ... make public ... then make a website ... then check").
+- 2026-07-04 check findings: "Local history" site claim was RIGHT, README table was stale (fixed
+  README). Mobile nav keeps Install (primary CTA) not GitHub; DESIGN.md amended to match.
+- 2026-07-04 logo: Josh picked wordmark option 1a (Jura lowercase + dashed wave) from his logo
+  sheet; recolored to site ink, Jura self-hosted, wave animation paused under reduced-motion.

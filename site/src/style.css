@@ -106,14 +106,32 @@ body {
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--border-soft);
 }
-.nav-brand {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 700;
-  font-size: 1.4rem;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-  text-decoration: none;
+.nav-brand { color: var(--ink); text-decoration: none; }
+
+/* logo lockup (wordmark option 1a): Jura lowercase + dashed wave */
+.logo {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  line-height: 1;
+}
+.logo-text {
+  font-family: "Jura", var(--font-body);
+  font-weight: 500;
+  font-size: 1.3rem;
+  letter-spacing: 0.34em;
+  margin-right: -0.34em; /* optical: cancel trailing tracking */
+  color: currentColor;
+}
+.logo-wave { width: 100%; max-width: 8.2em; height: 12px; color: currentColor; }
+.logo-wave path {
+  stroke-dashoffset: 0;
+  animation: flowdash 2.4s linear infinite;
+}
+@keyframes flowdash { to { stroke-dashoffset: -28; } }
+@media (prefers-reduced-motion: reduce) {
+  .logo-wave path { animation: none; }
 }
 .nav-cta { display: flex; gap: 0.6rem; align-items: center; }
 
@@ -395,12 +413,8 @@ body {
   align-items: baseline;
   justify-content: space-between;
 }
-.footer-brand {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 700;
-  font-size: 1.2rem;
-}
+.footer-brand .logo-text { font-size: 1.05rem; }
+.footer-brand .logo-wave { height: 10px; }
 .footer-links { display: flex; gap: 1.5rem; }
 .footer-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
 .footer-links a:hover { color: var(--ink); }

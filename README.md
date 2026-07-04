@@ -60,7 +60,7 @@ Then hold **⌃ Ctrl + ⌥ Alt + ⇧ Shift**, speak, and release. To remove ever
 | Per-app tone (formal for email/Slack, casual for Discord) | ✅ v1 |
 | Pill overlay (listening/processing indicator) | ✅ v1 |
 | Command Mode (voice commands, not just dictation) | 🔜 v2 |
-| Transcript history | 🔜 v2 |
+| Transcript history | ✅ (local JSONL, History pane, cap 200) |
 | Auto-learn dictionary from corrections | 🔜 v2 |
 | macOS support | 🔜 v2 (see [docs/MACOS.md](docs/MACOS.md)) |
 
