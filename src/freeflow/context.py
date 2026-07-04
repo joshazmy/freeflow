@@ -92,14 +92,16 @@ def tone_for(app_class: str, title: str, cfg: Config) -> str:
     app_class = (app_class or "").lower()
     title_lower = (title or "").lower()
 
-    override = (cfg.tone_overrides or {}).get(app_class)
+    overrides = cfg.tone_overrides or {}
+    override = overrides.get(app_class)
     if override:
         return override
 
+    # category-level overrides (settings GUI rows), keyed with a leading underscore
     if app_class in _EMAIL_APPS or any(hint in title_lower for hint in _EMAIL_TITLE_HINTS):
-        return "formal"
+        return overrides.get("_email", "formal")
     if app_class in _WORK_CHAT_APPS:
-        return "formal"
+        return overrides.get("_work_chat", "formal")
     if app_class in _PERSONAL_CHAT_APPS:
-        return "casual"
-    return "neutral"
+        return overrides.get("_personal_chat", "casual")
+    return overrides.get("_default", "neutral")

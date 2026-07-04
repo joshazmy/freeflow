@@ -138,3 +138,35 @@ def test_tone_for_override_wins(monkeypatch):
 def test_tone_for_builtin_categories(app_class, title, expected):
     cfg = Config()
     assert context.tone_for(app_class, title, cfg) == expected
+
+
+# --- category-level tone overrides (GUI Tone pane rows) ---
+
+def test_tone_category_overrides():
+    from freeflow.context import tone_for
+    from freeflow.config import Config
+    cfg = Config(tone_overrides={
+        "_email": "casual", "_work_chat": "neutral",
+        "_personal_chat": "formal", "_default": "formal",
+    })
+    assert tone_for("thunderbird", "", cfg) == "casual"      # email category
+    assert tone_for("", "Gmail - Inbox", cfg) == "casual"    # email via title hint
+    assert tone_for("slack", "", cfg) == "neutral"           # work chat
+    assert tone_for("discord", "", cfg) == "formal"          # personal chat
+    assert tone_for("kitty", "", cfg) == "formal"            # everything else
+
+
+def test_tone_app_override_beats_category():
+    from freeflow.context import tone_for
+    from freeflow.config import Config
+    cfg = Config(tone_overrides={"_personal_chat": "formal", "discord": "casual"})
+    assert tone_for("discord", "", cfg) == "casual"
+
+
+def test_tone_defaults_unchanged_without_categories():
+    from freeflow.context import tone_for
+    from freeflow.config import Config
+    cfg = Config()
+    assert tone_for("thunderbird", "", cfg) == "formal"
+    assert tone_for("discord", "", cfg) == "casual"
+    assert tone_for("kitty", "", cfg) == "neutral"
