@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 — 2026-07-04
+
+- Switches now really match the theme everywhere — desktop themes/rices that ship their own
+  GTK styling can no longer repaint Freeflow's controls.
+- Settings panes scroll instead of cutting controls off when the window is tiled small.
+- A dead network connection can no longer freeze a model download or pull forever — it now
+  times out and re-enables the buttons with an error message.
+
 ## 0.3.0 — 2026-07-04
 
 - **Dark mode** — warm dark theme with a switch in General; applies instantly, no restart.

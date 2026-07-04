@@ -131,7 +131,7 @@ class _FakeResp:
 def test_download_model_writes_and_renames(tmp_path):
     fractions = []
 
-    def fake_urlopen(url):
+    def fake_urlopen(url, timeout=None):
         return _FakeResp([b"hello", b"world"], {"Content-Length": "10"})
 
     path = models.download_model(
@@ -147,7 +147,7 @@ def test_download_model_writes_and_renames(tmp_path):
 def test_download_model_pulses_without_content_length(tmp_path):
     fractions = []
 
-    def fake_urlopen(url):
+    def fake_urlopen(url, timeout=None):
         return _FakeResp([b"data"], {})
 
     models.download_model(
@@ -161,7 +161,7 @@ def test_download_model_cleans_up_on_failure(tmp_path):
         def read(self, n=-1):
             raise OSError("net down")
 
-    def fake_urlopen(url):
+    def fake_urlopen(url, timeout=None):
         return Boom([], {})
 
     with pytest.raises(OSError):
@@ -368,3 +368,37 @@ def test_pull_pill_hidden_when_installed(tmp_path, monkeypatch):
     root = models.build(ctx)
     _pump(1.0)
     assert not _find(root, "pull-row").get_visible()
+
+
+def test_download_model_passes_socket_timeout(tmp_path):
+    """A stalled network must not hang the worker thread forever (UI stays disabled)."""
+    seen = {}
+
+    def fake_urlopen(url, timeout=None):
+        seen["timeout"] = timeout
+
+        class R:
+            headers = {"Content-Length": "1"}
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def read(self, n): return b""
+        return R()
+
+    models.download_model("http://x", tmp_path, "base", urlopen=fake_urlopen)
+    assert seen["timeout"] and seen["timeout"] > 0
+
+
+def test_pull_model_passes_socket_timeout():
+    seen = {}
+
+    def fake_urlopen(req, timeout=None):
+        seen["timeout"] = timeout
+
+        class R:
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def __iter__(self): return iter([])
+        return R()
+
+    models.pull_model("http://127.0.0.1:11434", "m", urlopen=fake_urlopen)
+    assert seen["timeout"] and seen["timeout"] > 0

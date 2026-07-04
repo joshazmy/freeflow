@@ -14,6 +14,11 @@ from gi.repository import GLib, Gtk
 
 MODEL_ALTERNATIVES = ["base", "small", "large-v3", "large-v3-turbo"]
 
+# socket-level timeout for streaming downloads/pulls: each read gets this long,
+# so slow-but-alive transfers are fine while a dead connection can't wedge the
+# worker thread (and the disabled pills) forever.
+NETWORK_TIMEOUT = 30.0
+
 CLEANUP_EXPLANATION = (
     "Cleanup runs a local Ollama pass over your transcription: it strips filler words "
     "(um, uh, like), fixes punctuation and capitalization, and applies your tone. "
@@ -66,7 +71,7 @@ def download_model(url, dest_dir, name, *, urlopen=urllib.request.urlopen, progr
     part = dest / f"{name}.part"
     final = dest / f"ggml-{name}.bin"
     try:
-        with urlopen(url) as resp:
+        with urlopen(url, timeout=NETWORK_TIMEOUT) as resp:
             total = int(resp.headers.get("Content-Length") or 0)
             got = 0
             with open(part, "wb") as f:
@@ -119,7 +124,7 @@ def pull_model(url, model, *, urlopen=urllib.request.urlopen, progress=None) -> 
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urlopen(req) as resp:
+    with urlopen(req, timeout=NETWORK_TIMEOUT) as resp:
         for raw in resp:
             line = raw.decode() if isinstance(raw, bytes) else raw
             status, frac = parse_pull_line(line)
