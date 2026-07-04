@@ -139,13 +139,51 @@ def test_cleanup_switch_persists(tmp_path, monkeypatch):
     assert load(ctx.config_path).cleanup == sw.get_active()
 
 
-def test_ollama_model_entry_persists(tmp_path, monkeypatch):
+def test_ollama_model_entry_does_not_save_on_every_keystroke(tmp_path, monkeypatch):
     monkeypatch.setattr(models, "ollama_connected", lambda *a, **k: True)
     ctx = _ctx(tmp_path)
     root = models.build(ctx)
     entry = _find(root, "entry-ollama-model")
     entry.set_text("llama3:8b")
+    # "changed" alone (no activate, no focus-out) must not persist.
+    assert load(ctx.config_path).ollama_model != "llama3:8b"
+
+
+def test_ollama_model_entry_persists_on_activate(tmp_path, monkeypatch):
+    monkeypatch.setattr(models, "ollama_connected", lambda *a, **k: True)
+    ctx = _ctx(tmp_path)
+    root = models.build(ctx)
+    entry = _find(root, "entry-ollama-model")
+    entry.set_text("llama3:8b")
+    entry.emit("activate")
     assert load(ctx.config_path).ollama_model == "llama3:8b"
+
+
+def test_ollama_model_entry_persists_on_focus_leave(tmp_path, monkeypatch):
+    monkeypatch.setattr(models, "ollama_connected", lambda *a, **k: True)
+    ctx = _ctx(tmp_path)
+    root = models.build(ctx)
+    entry = _find(root, "entry-ollama-model")
+    entry.set_text("mistral:7b")
+    controllers = entry.observe_controllers()
+    focus_controller = next(
+        c for c in controllers if isinstance(c, Gtk.EventControllerFocus)
+    )
+    focus_controller.emit("leave")
+    assert load(ctx.config_path).ollama_model == "mistral:7b"
+
+
+def test_ollama_model_entry_no_duplicate_save_if_unchanged(tmp_path, monkeypatch):
+    monkeypatch.setattr(models, "ollama_connected", lambda *a, **k: True)
+    ctx = _ctx(tmp_path)
+    root = models.build(ctx)
+    entry = _find(root, "entry-ollama-model")
+    original = entry.get_text()
+    saves = []
+    real_save = ctx.save
+    monkeypatch.setattr(ctx, "save", lambda **kw: (saves.append(kw), real_save(**kw))[1])
+    entry.emit("activate")  # no change made
+    assert saves == []
 
 
 def test_badge_updates_from_probe_thread(tmp_path, monkeypatch):

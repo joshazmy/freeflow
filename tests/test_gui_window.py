@@ -134,6 +134,69 @@ def test_restart_now_button_calls_systemctl(tmp_path, monkeypatch):
     assert calls[0][0][0] == ["systemctl", "--user", "restart", "freeflow"]
 
 
+def test_restart_now_success_hides_banner_and_clears_flag(tmp_path, monkeypatch):
+    import subprocess as sp
+    from freeflow.gui.app import FreeflowApp
+    from freeflow.gui.window import SettingsWindow
+
+    monkeypatch.setattr(
+        "freeflow.gui.window.subprocess.run",
+        lambda *a, **kw: sp.CompletedProcess(a, 0),
+    )
+
+    app = FreeflowApp()
+    ctx = make_ctx(tmp_path)
+    win = SettingsWindow(application=app, ctx=ctx)
+    ctx.save(paste=False)
+    assert win.restart_banner.get_reveal_child() is True
+
+    win.restart_button.emit("clicked")
+
+    assert win.restart_banner.get_reveal_child() is False
+    assert ctx.restart_needed is False
+
+
+def test_restart_now_failure_keeps_banner_with_message(tmp_path, monkeypatch):
+    import subprocess as sp
+    from freeflow.gui.app import FreeflowApp
+    from freeflow.gui.window import SettingsWindow
+
+    monkeypatch.setattr(
+        "freeflow.gui.window.subprocess.run",
+        lambda *a, **kw: sp.CompletedProcess(a, 1),
+    )
+
+    app = FreeflowApp()
+    ctx = make_ctx(tmp_path)
+    win = SettingsWindow(application=app, ctx=ctx)
+    ctx.save(paste=False)
+
+    win.restart_button.emit("clicked")
+
+    assert win.restart_banner.get_reveal_child() is True
+    assert "systemctl --user restart freeflow" in win.restart_label.get_label()
+
+
+def test_restart_now_exception_keeps_banner_with_message(tmp_path, monkeypatch):
+    from freeflow.gui.app import FreeflowApp
+    from freeflow.gui.window import SettingsWindow
+
+    def boom(*a, **kw):
+        raise OSError("no systemd")
+
+    monkeypatch.setattr("freeflow.gui.window.subprocess.run", boom)
+
+    app = FreeflowApp()
+    ctx = make_ctx(tmp_path)
+    win = SettingsWindow(application=app, ctx=ctx)
+    ctx.save(paste=False)
+
+    win.restart_button.emit("clicked")
+
+    assert win.restart_banner.get_reveal_child() is True
+    assert "Restart failed" in win.restart_label.get_label()
+
+
 def test_app_main_creates_and_activates(tmp_path, monkeypatch):
     from freeflow.gui import app as app_mod
 

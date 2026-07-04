@@ -45,7 +45,7 @@ def test_open_settings_launches_gui(monkeypatch):
     calls = []
     monkeypatch.setattr(subprocess, "Popen", lambda args, **kw: calls.append(args))
     tray.open_settings()
-    assert calls == [["freeflow", "gui"]]
+    assert calls == [[sys.executable, "-m", "freeflow.cli", "gui"]]
 
 
 def test_open_settings_swallows_errors(monkeypatch):

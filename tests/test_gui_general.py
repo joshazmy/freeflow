@@ -74,6 +74,36 @@ def test_set_login_enabled_never_raises(monkeypatch):
     general.set_login_enabled(True)  # must not raise
 
 
+def test_set_login_enabled_returns_true_on_success(monkeypatch):
+    def fake_run(cmd, **k):
+        return subprocess.CompletedProcess(cmd, 0)
+    monkeypatch.setattr(general.subprocess, "run", fake_run)
+    assert general.set_login_enabled(True) is True
+
+
+def test_set_login_enabled_returns_false_on_nonzero(monkeypatch):
+    def fake_run(cmd, **k):
+        return subprocess.CompletedProcess(cmd, 1)
+    monkeypatch.setattr(general.subprocess, "run", fake_run)
+    assert general.set_login_enabled(True) is False
+
+
+def test_set_login_enabled_returns_false_on_exception(monkeypatch):
+    def fake_run(*a, **k):
+        raise OSError("no systemd")
+    monkeypatch.setattr(general.subprocess, "run", fake_run)
+    assert general.set_login_enabled(True) is False
+
+
+def test_language_pills_english_auto_matches_onboarding_value():
+    # "English (auto)" must save the same value on both the onboarding wizard
+    # and the General pane.
+    from freeflow.gui import onboarding
+    onboarding_value = dict(onboarding.LANGUAGES)["English (auto)"]
+    general_value = dict(general.LANGUAGE_PILLS)["English (auto)"]
+    assert onboarding_value == general_value == "auto"
+
+
 # ---- widget tests (real GTK) ----
 
 gi = pytest.importorskip("gi")
@@ -144,10 +174,21 @@ def test_language_pill_click_persists(tmp_path, monkeypatch):
 def test_start_login_switch_calls_setter(tmp_path, monkeypatch):
     monkeypatch.setattr(general, "is_login_enabled", lambda: False)
     calls = []
-    monkeypatch.setattr(general, "set_login_enabled", lambda v: calls.append(v))
+    monkeypatch.setattr(general, "set_login_enabled", lambda v: (calls.append(v), True)[1])
     ctx = _ctx(tmp_path)
     root = general.build(ctx)
     sw = _find(root, "switch-start-login")
     assert sw.get_active() is False
     sw.set_active(True)
     assert calls == [True]
+    assert sw.get_active() is True
+
+
+def test_start_login_switch_reverts_on_failure(tmp_path, monkeypatch):
+    monkeypatch.setattr(general, "is_login_enabled", lambda: False)
+    monkeypatch.setattr(general, "set_login_enabled", lambda v: False)
+    ctx = _ctx(tmp_path)
+    root = general.build(ctx)
+    sw = _find(root, "switch-start-login")
+    sw.set_active(True)
+    assert sw.get_active() is False

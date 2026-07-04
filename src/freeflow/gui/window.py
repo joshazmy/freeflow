@@ -50,9 +50,10 @@ class SettingsWindow(Gtk.ApplicationWindow):
         banner_bar.set_margin_bottom(8)
         banner_bar.set_margin_start(12)
         banner_bar.set_margin_end(12)
-        banner_bar.append(
-            Gtk.Label(label="Restart Freeflow to apply changes", hexpand=True, xalign=0)
+        self.restart_label = Gtk.Label(
+            label="Restart Freeflow to apply changes", hexpand=True, xalign=0
         )
+        banner_bar.append(self.restart_label)
         self.restart_button = Gtk.Button(label="Restart now")
         self.restart_button.add_css_class("ff-pill-active")
         self.restart_button.connect("clicked", self._on_restart_now)
@@ -85,6 +86,15 @@ class SettingsWindow(Gtk.ApplicationWindow):
 
     def _on_restart_now(self, button) -> None:
         try:
-            subprocess.run(["systemctl", "--user", "restart", "freeflow"])
+            result = subprocess.run(["systemctl", "--user", "restart", "freeflow"])
+            ok = result.returncode == 0
         except Exception:
-            pass
+            ok = False
+
+        if ok:
+            self.ctx.restart_needed = False
+            self.restart_banner.set_reveal_child(False)
+        else:
+            self.restart_label.set_label(
+                "Restart failed — run: systemctl --user restart freeflow"
+            )

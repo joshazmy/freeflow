@@ -4,13 +4,14 @@ the typelib; main() fails soft with an install hint."""
 from __future__ import annotations
 
 import subprocess
+import sys
 
 UNIT = "freeflow"
 
 
 def open_settings() -> None:
     try:
-        subprocess.Popen(["freeflow", "gui"])
+        subprocess.Popen([sys.executable, "-m", "freeflow.cli", "gui"])
     except Exception:
         pass
 

@@ -25,8 +25,7 @@ CHORD_PRESETS = [
 ]
 
 LANGUAGE_PILLS = [
-    ("English (auto)", "en"),
-    ("Auto (multilingual)", "auto"),
+    ("English (auto)", "auto"),
     ("Español", "es"),
     ("Français", "fr"),
     ("Deutsch", "de"),
@@ -49,14 +48,16 @@ def is_login_enabled() -> bool:
     return out.stdout.strip() == "enabled"
 
 
-def set_login_enabled(enable: bool) -> None:
+def set_login_enabled(enable: bool) -> bool:
+    """Best-effort; returns whether the systemctl call actually succeeded."""
     try:
-        subprocess.run(
+        result = subprocess.run(
             ["systemctl", "--user", "enable" if enable else "disable", "freeflow"],
             capture_output=True, timeout=2,
         )
     except (OSError, subprocess.SubprocessError):
-        pass  # best-effort; no systemd is not fatal
+        return False
+    return result.returncode == 0
 
 
 # ---- widget ----
@@ -159,7 +160,16 @@ def build(ctx) -> Gtk.Widget:
     # Start at login switch
     login_sw = Gtk.Switch(active=is_login_enabled())
     login_sw.set_name("switch-start-login")
-    login_sw.connect("notify::active", lambda sw, _p: set_login_enabled(sw.get_active()))
+
+    def on_login_toggled(sw, _pspec):
+        wanted = sw.get_active()
+        if not set_login_enabled(wanted):
+            handler_id = login_toggled_handler["id"]
+            sw.handler_block(handler_id)
+            sw.set_active(not wanted)
+            sw.handler_unblock(handler_id)
+
+    login_toggled_handler = {"id": login_sw.connect("notify::active", on_login_toggled)}
     root.append(_row("Start at login", None, login_sw))
 
     return root

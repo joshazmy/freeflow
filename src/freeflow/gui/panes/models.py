@@ -135,7 +135,16 @@ def build(ctx) -> Gtk.Widget:
     entry = Gtk.Entry()
     entry.set_text(ctx.cfg.ollama_model)
     entry.set_name("entry-ollama-model")
-    entry.connect("changed", lambda e: ctx.save(ollama_model=e.get_text()))
+
+    def save_if_changed(*_a):
+        text = entry.get_text()
+        if text != ctx.cfg.ollama_model:
+            ctx.save(ollama_model=text)
+
+    entry.connect("activate", save_if_changed)
+    focus_controller = Gtk.EventControllerFocus()
+    focus_controller.connect("leave", save_if_changed)
+    entry.add_controller(focus_controller)
     entry_row.append(model_label)
     entry_row.append(entry)
     cleanup_card.append(entry_row)
