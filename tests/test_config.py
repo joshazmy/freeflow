@@ -30,6 +30,24 @@ def test_env_override_parses_bool(tmp_path, monkeypatch):
     assert cfg.cleanup is False
 
 
+def test_history_defaults_true(tmp_path):
+    cfg = load(str(tmp_path / "nope.toml"))
+    assert cfg.history is True
+
+
+def test_history_toml_override(tmp_path):
+    path = tmp_path / "config.toml"
+    path.write_text("history = false\n")
+    cfg = load(str(path))
+    assert cfg.history is False
+
+
+def test_history_env_override(tmp_path, monkeypatch):
+    monkeypatch.setenv("FREEFLOW_HISTORY", "false")
+    cfg = load(str(tmp_path / "nope.toml"))
+    assert cfg.history is False
+
+
 def test_env_override_parses_float(tmp_path, monkeypatch):
     monkeypatch.setenv("FREEFLOW_CLEANUP_TIMEOUT", "2.5")
     cfg = load(str(tmp_path / "nope.toml"))

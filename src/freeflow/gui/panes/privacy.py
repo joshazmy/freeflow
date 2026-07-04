@@ -6,6 +6,12 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk
 
+from freeflow.history import History
+
+# Module-level factory so tests can monkeypatch which History (and thus which
+# on-disk file) the clear button acts on.
+HISTORY_FACTORY = History
+
 CHECKS = (
     "Audio never leaves this machine",
     "No accounts, no sign-in",
@@ -34,5 +40,25 @@ def build(ctx) -> Gtk.Widget:
     chip = Gtk.Label(label="$ freeflow status ● all local")
     chip.add_css_class("ff-mono")
     panel.append(chip)
+
+    clear_btn = Gtk.Button(label="Clear history")
+    clear_btn.add_css_class("ff-pill")
+
+    def on_clear(_btn) -> None:
+        if clear_btn.get_label() == "Clear history":
+            clear_btn.set_label("Really clear?")
+            return
+        HISTORY_FACTORY().clear()
+        clear_btn.set_label("Clear history")
+
+    clear_btn.connect("clicked", on_clear)
+    panel.append(clear_btn)
+
+    caption = Gtk.Label(
+        label="Dictation history is stored locally and never leaves this machine.",
+        xalign=0,
+    )
+    caption.add_css_class("ff-muted")
+    panel.append(caption)
 
     return panel

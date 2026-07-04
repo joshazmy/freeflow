@@ -33,6 +33,7 @@ def stub_other_agents_panes():
     stubbed = [
         _stub_pane_module("general", "General stub"),
         _stub_pane_module("dictionary", "Dictionary stub"),
+        _stub_pane_module("history", "History stub"),
         _stub_pane_module("tone", "Tone stub"),
         _stub_pane_module("models", "Models stub"),
     ]
@@ -54,11 +55,12 @@ def test_panes_list_has_six_in_contract_order():
     from freeflow.gui import panes
 
     ids = [p[0] for p in panes.PANES]
-    assert ids == ["general", "dictionary", "tone", "models", "privacy", "about"]
+    assert ids == ["general", "dictionary", "history", "tone", "models", "privacy", "about"]
     titles = [p[1] for p in panes.PANES]
     assert titles == [
         "General",
         "Dictionary",
+        "History",
         "Tone & Apps",
         "Models",
         "Data & Privacy",
@@ -82,7 +84,7 @@ def test_window_has_six_sidebar_rows_matching_pane_titles(tmp_path):
     while row is not None:
         count += 1
         row = win.sidebar.get_row_at_index(count)
-    assert count == len(PANES) == 6
+    assert count == len(PANES) == 7
 
 
 def test_selecting_row_switches_stack(tmp_path):

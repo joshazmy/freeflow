@@ -6,7 +6,10 @@ from __future__ import annotations
 import subprocess
 import sys
 
+from freeflow.config import load, save_values
+
 UNIT = "freeflow"
+TONE_CHOICES = (("Neutral", "neutral"), ("Formal", "formal"), ("Casual", "casual"))
 
 
 def open_settings() -> None:
@@ -35,6 +38,16 @@ def toggle_dictation() -> None:
 
 def toggle_label(active: bool) -> str:
     return "Pause dictation" if active else "Resume dictation"
+
+
+def current_default_tone(path: str | None = None) -> str:
+    return load(path).tone_overrides.get("_default", "neutral")
+
+
+def set_default_tone(value: str, path: str | None = None) -> None:
+    merged = dict(load(path).tone_overrides)
+    merged["_default"] = value
+    save_values({"tone_overrides": merged}, path)
 
 
 def _load_appindicator():
@@ -74,15 +87,32 @@ def _build_indicator(Gtk, AppIndicator3):
         mi_toggle.set_label(toggle_label(dictation_active()))
     mi_toggle.connect("activate", _on_toggle)
 
+    mi_tone = Gtk.MenuItem(label="Default tone")
+    tone_menu = Gtk.Menu()
+    active_tone = current_default_tone()
+    group = None
+    for label, value in TONE_CHOICES:
+        item = Gtk.RadioMenuItem(label=label, group=group)
+        group = item
+        if value == active_tone:
+            item.set_active(True)
+
+        def _on_tone_toggled(widget, value=value):
+            if widget.get_active():
+                set_default_tone(value)
+        item.connect("toggled", _on_tone_toggled)
+        tone_menu.append(item)
+    mi_tone.set_submenu(tone_menu)
+
     mi_quit = Gtk.MenuItem(label="Quit tray")
     mi_quit.connect("activate", lambda *_: Gtk.main_quit())
 
-    for item in (mi_settings, mi_toggle, Gtk.SeparatorMenuItem(), mi_quit):
+    for item in (mi_settings, mi_toggle, mi_tone, Gtk.SeparatorMenuItem(), mi_quit):
         menu.append(item)
     menu.show_all()
     ind.set_menu(menu)
 
-    labels = [mi_settings.get_label(), mi_toggle.get_label(), mi_quit.get_label()]
+    labels = [mi_settings.get_label(), mi_toggle.get_label(), mi_tone.get_label(), mi_quit.get_label()]
     return ind, labels
 
 
