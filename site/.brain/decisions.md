@@ -12,3 +12,5 @@
   README). Mobile nav keeps Install (primary CTA) not GitHub; DESIGN.md amended to match.
 - 2026-07-04 logo: Josh picked wordmark option 1a (Jura lowercase + dashed wave) from his logo
   sheet; recolored to site ink, Jura self-hosted, wave animation paused under reduced-motion.
+- 2026-07-04 Josh: NO Claude co-author trailers in this repo's commits (history rewritten via
+  filter-branch + gh-pages orphan-recreated to purge them; backup bundle in ~/Backups).

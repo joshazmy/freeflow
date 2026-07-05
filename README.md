@@ -1,8 +1,15 @@
 # Freeflow
 
+**[Website](https://joshazmy.github.io/freeflow/)** ·
+![MIT](https://img.shields.io/badge/license-MIT-E7D4F9) ![Linux](https://img.shields.io/badge/platform-Linux%20(Wayland)-111110) ![Local](https://img.shields.io/badge/cloud-none-2e7d4f) ![Tests](https://img.shields.io/badge/tests-280%20passing-2e7d4f)
+
 Freeflow is Wispr Flow, but open source and 100% local. Hold a key, speak, and cleaned-up text
 lands in whatever app has focus. Nothing you say ever leaves your machine — no cloud API, no
 account, no telemetry.
+
+| Settings (light) | Settings (dark) |
+| --- | --- |
+| ![Freeflow settings, light theme](docs/img/settings-light.png) | ![Freeflow settings, dark theme](docs/img/settings-dark.png) |
 
 ## How it feels to use
 

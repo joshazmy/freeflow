@@ -4,8 +4,9 @@ set -euo pipefail
 cd "$(dirname "$0")"
 npm run build
 cd ..
+git fetch -q origin gh-pages || true
 git worktree add /tmp/freeflow-gh-pages gh-pages 2>/dev/null || {
-  git branch gh-pages 2>/dev/null || true
+  git branch gh-pages origin/gh-pages 2>/dev/null || git branch gh-pages
   git worktree add /tmp/freeflow-gh-pages gh-pages
 }
 rm -rf /tmp/freeflow-gh-pages/*
