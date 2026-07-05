@@ -446,13 +446,6 @@ body {
 .about-body { max-width: 62ch; display: grid; gap: 1rem; }
 .about-body p { color: var(--muted); font-size: 1.06rem; }
 .about-facts { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.6rem; }
-.chip {
-  border: 1px solid var(--ink);
-  border-radius: 999px;
-  background: var(--card);
-  padding: 0.45rem 1rem;
-  font-size: 0.9rem;
-}
 .chip-link { background: var(--accent); }
 .chip-link a { color: var(--ink); text-decoration: none; }
 .chip-link a:hover { text-decoration: underline; }
