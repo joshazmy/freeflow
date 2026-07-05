@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Freeflow: 100% local dictation for Linux</title>
+    <meta
+      name="description"
+      content="Hold a key, speak, and cleaned-up text lands at your cursor. Open source, runs fully on your machine. No cloud, no accounts, no telemetry. Linux (Wayland)."
+    />
+    <meta property="og:title" content="Freeflow: 100% local dictation for Linux" />
+    <meta
+      property="og:description"
+      content="Hold a key, speak, and cleaned-up text lands at your cursor. Open source, 100% local. No cloud, no accounts, no telemetry."
+    />
+    <meta property="og:type" content="website" />
+    <!-- favicon: lavender rounded square, ink serif F (inline SVG data URI, no request) -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23E7D4F9'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='20' font-style='italic' font-weight='700' fill='%23111110' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E"
+    />
+    <!-- self-hosted fonts, ZERO third-party requests; /freeflow/ keeps it correct under /freeflow/ -->
+    <link rel="stylesheet" href="/freeflow/fonts/fonts.css" />
+    <script type="module" crossorigin src="/freeflow/assets/index-DLOAvzb_.js"></script>
+    <link rel="stylesheet" crossorigin href="/freeflow/assets/index-BGmu2_7P.css">
+  </head>
+  <body>
+    <header class="nav" aria-label="Primary">
+      <a class="nav-brand logo" href="#top" aria-label="Freeflow home"><span class="logo-text">freeflow</span><svg class="logo-wave" viewBox="0 0 330 24" fill="none" aria-hidden="true"><path d="M0 12 Q 20.6 0 41.25 12 T 82.5 12 T 123.75 12 T 165 12 T 206.25 12 T 247.5 12 T 288.75 12 T 330 12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="8 6"/></svg></a>
+      <div class="nav-cta">
+        <a class="btn btn-ghost" href="https://github.com/joshazmy/freeflow">GitHub</a>
+        <a class="btn btn-accent" href="https://github.com/joshazmy/freeflow">Install</a>
+      </div>
+    </header>
+
+    <main>
+      <!-- 1. HERO -->
+      <section class="hero" id="top">
+        <div class="hero-inner">
+          <p class="eyebrow mono-chip">$ 100% local dictation for Linux</p>
+          <h1 class="hero-title">Speak.<br />It types.</h1>
+          <p class="hero-sub">
+            Hold a key and talk. Freeflow cleans up what you said and drops it at your cursor, in
+            any app. Nothing you say leaves your machine.
+          </p>
+          <div class="hero-cta">
+            <a class="btn btn-accent" href="https://github.com/joshazmy/freeflow">Get Freeflow</a>
+            <a class="btn btn-ghost" href="#how">How it works</a>
+          </div>
+
+          <!-- animated dictation pill demo (the product's own overlay) -->
+          <div class="pill-demo" aria-hidden="true">
+            <div class="pill-mock listening">
+              <span class="bar"></span><span class="bar"></span
+              ><span class="bar"></span><span class="bar"></span>
+            </div>
+            <p class="pill-caption">hold &#8963; &#8997; &#8679; &#8230; speak &#8230; release</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. HOW IT WORKS -->
+      <section class="how" id="how">
+        <p class="eyebrow">How it works</p>
+        <h2 class="section-title">No cloud. Three steps.</h2>
+        <ol class="steps">
+          <li class="step reveal">
+            <span class="step-num">1</span>
+            <h3>Hold the hotkey and talk</h3>
+            <p>Freeflow records only while you hold the key. Release to stop.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-num">2</span>
+            <h3>Your machine transcribes it</h3>
+            <p>whisper.cpp turns your voice into text right on your computer. Nothing is uploaded.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-num">3</span>
+            <h3>Clean text lands at your cursor</h3>
+            <p>A small local AI tidies the words, then Freeflow types the result where you were.</p>
+          </li>
+        </ol>
+      </section>
+
+      <!-- 3. FEATURES -->
+      <section class="features" id="features">
+        <p class="eyebrow">Features</p>
+        <h2 class="section-title">Everything runs on your machine.</h2>
+        <div class="feature-grid">
+          <article class="card card-wide reveal">
+            <h3>AI cleanup</h3>
+            <p>Fillers gone, punctuation fixed, capitalized. You talk loosely, it writes clean.</p>
+            <div class="beforeafter">
+              <p class="ba-raw">um so basically can you uh send the the file tomorrow</p>
+              <span class="ba-arrow" aria-hidden="true">&#8595;</span>
+              <p class="ba-clean">Can you send the file tomorrow.</p>
+            </div>
+          </article>
+
+          <article class="card reveal">
+            <h3>Tones per app</h3>
+            <p>Formal for email, casual for chat. Freeflow picks the tone by the app you type into.</p>
+            <div class="chip-row">
+              <span class="chip">Formal</span>
+              <span class="chip chip-active">Neutral</span>
+              <span class="chip">Casual</span>
+            </div>
+          </article>
+
+          <article class="card reveal">
+            <h3>Personal dictionary</h3>
+            <p>Force the spellings you care about. Names, tools, jargon land right every time.</p>
+            <div class="dict-sample">
+              <span class="dict-line">hyperland <span class="dict-arrow" aria-hidden="true">&#8594;</span> Hyprland</span>
+              <span class="dict-line">Hyprland</span>
+              <span class="dict-line">Ollama</span>
+            </div>
+          </article>
+
+          <article class="card reveal">
+            <h3>Local history</h3>
+            <p>Your recent dictations stay on disk, yours to keep or wipe. Never synced anywhere.</p>
+          </article>
+
+          <article class="card reveal">
+            <h3>Dark mode</h3>
+            <p>A settings app that matches your desktop, light or dark.</p>
+            <div class="theme-swatch" aria-hidden="true">
+              <span class="sw sw-light"></span>
+              <span class="sw sw-dark"></span>
+            </div>
+          </article>
+
+          <article class="card reveal">
+            <h3>Tray and hotkey</h3>
+            <p>Lives in your system tray. One chord to dictate, hands-free mode on a double tap.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- 4. PRIVACY BAND -->
+      <section class="privacy" id="privacy" aria-labelledby="privacy-title">
+        <h2 class="privacy-title" id="privacy-title">100% local.</h2>
+        <ul class="privacy-list">
+          <li class="reveal"><span class="check" aria-hidden="true">&#10003;</span> Audio never leaves this machine</li>
+          <li class="reveal"><span class="check" aria-hidden="true">&#10003;</span> No accounts, no sign-in</li>
+          <li class="reveal"><span class="check" aria-hidden="true">&#10003;</span> No telemetry, ever</li>
+          <li class="reveal"><span class="check" aria-hidden="true">&#10003;</span> Works fully offline</li>
+        </ul>
+        <p class="mono-chip status-chip">
+          $ freeflow status <span class="ok-dot" aria-hidden="true"></span><span class="ok-text">&#9679; all local</span>
+        </p>
+      </section>
+
+      <!-- 5. INSTALL -->
+      <section class="install" id="install">
+        <p class="eyebrow">Install</p>
+        <h2 class="section-title">Up and running in three commands.</h2>
+        <div class="terminal" role="img" aria-label="Terminal showing three install commands: git clone the repo, run install.sh, then freeflow onboarding.">
+          <div class="term-bar" aria-hidden="true">
+            <span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span>
+          </div>
+          <pre class="term-body"><code><span class="tprompt">$</span> git clone https://github.com/joshazmy/freeflow
+<span class="tprompt">$</span> ./install.sh          <span class="tcomment"># prints a plan, asks once, installs locally</span>
+<span class="tprompt">$</span> freeflow onboarding    <span class="tcomment"># 6-step first-run setup</span></code></pre>
+        </div>
+        <p class="install-note">
+          Fedora, Arch and Debian friendly &#183; MIT &#183; uninstall.sh removes every trace.
+        </p>
+        <a class="install-link" href="https://github.com/joshazmy/freeflow#install">Read the install guide</a>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p class="footer-brand logo"><span class="logo-text">freeflow</span><svg class="logo-wave" viewBox="0 0 330 24" fill="none" aria-hidden="true"><path d="M0 12 Q 20.6 0 41.25 12 T 82.5 12 T 123.75 12 T 165 12 T 206.25 12 T 247.5 12 T 288.75 12 T 330 12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="8 6"/></svg></p>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="https://github.com/joshazmy/freeflow">GitHub</a>
+        <a href="https://github.com/joshazmy/freeflow/blob/main/LICENSE">MIT License</a>
+      </nav>
+      <p class="footer-note">Built for Linux (Wayland). No cloud anywhere.</p>
+    </footer>
+
+  </body>
+</html>
